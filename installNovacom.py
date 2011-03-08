@@ -27,12 +27,17 @@ if __name__ == '__main__':
     path = tempfile.mkdtemp()
     
     dl = download_novacom_installer(pi.os, jar, path)
+    
+    if dl:
         
-    if pi.os == 'macosx':
-        tf = tarfile.open(dl)
-        tf.extractall(path)
-        tf.close() 
-        subprocess.call(['open','-W',dl[:-7]])
-        
+        if pi.os == 'macosx':
+            tf = tarfile.open(dl)
+            tf.extractall(path)
+            tf.close() 
+            subprocess.call(['open','-W',dl[:-7]])
+            
+        else:
+            subprocess.call(['msiexec','/i',dl])
+            
     shutil.rmtree(path)
         
