@@ -12,11 +12,11 @@ NOVA_MACOSX = 'resources/NovacomInstaller.pkg.tar.gz'
 
 def download_novacom_installer(os, url, path):
     if os == 'win32':
-        http_unzip(url, NOVA_WIN32, path)
+        http_unzip(url, [NOVA_WIN32], path, strip=True)
     elif os == 'win64':
-        http_unzip(url, NOVA_WIN64, path)
+        http_unzip(url, [NOVA_WIN64], path, strip=True)
     elif os == 'macosx':
-        http_unzip(url, NOVA_MACOSX, path)
+        http_unzip(url, [NOVA_MACOSX], path, strip=True)
 
 if __name__ == '__main__':
     
