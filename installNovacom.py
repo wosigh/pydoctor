@@ -10,13 +10,14 @@ NOVA_WIN32  = 'resources/NovacomInstaller_x86.msi'
 NOVA_WIN64  = 'resources/NovacomInstaller_x64.msi'
 NOVA_MACOSX = 'resources/NovacomInstaller.pkg.tar.gz'
 
-def download_novacom_installer(os, url, path):
+def download_novacom_installer(pi, url, path):
     dl = None
-    if os == 'win32':
-        dl = http_unzip(url, [NOVA_WIN32], path, strip=True)
-    elif os == 'win64':
-        dl = http_unzip(url, [NOVA_WIN64], path, strip=True)
-    elif os == 'macosx':
+    if pi.os == 'windows':
+        if pi.arch == 'x64':
+            dl = http_unzip(url, [NOVA_WIN64], path, strip=True)
+        else:
+            dl = http_unzip(url, [NOVA_WIN32], path, strip=True)
+    elif pi.os == 'macosx':
         dl = http_unzip(url, [NOVA_MACOSX], path, strip=True)
     return dl[0]
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     
     path = tempfile.mkdtemp()
     
-    dl = download_novacom_installer(pi.os, jar, path)
+    dl = download_novacom_installer(pi, jar, path)
     
     if dl:
         
