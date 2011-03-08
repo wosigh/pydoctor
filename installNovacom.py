@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import tempfile, tarfile, subprocess, shutil
-from platinfo import PlatInfo
+from platinfo2 import PlatInfo
 from httpunzip import *
 
 jar = 'http://palm.cdnetworks.net/rom/pre2/p201r0d11242010/wrep201rod/webosdoctorp102ueuna-wr.jar'
