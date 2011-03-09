@@ -9,10 +9,9 @@ py2exe_options = dict(
 )
 
 setup(
-    #data_files = ['webos-internals.ico'],
     windows = [
         {
-            'script': 'installNovacom.py',
+            'script': 'novacomInstaller.ico',
             'icon_resources': [(1, 'webos-internals.ico')]
         }
     ],
