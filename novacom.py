@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-import telnetlib, socket, struct, argparse, sys
+import telnetlib, socket, struct, argparse, sys, tty, termios
 
 class Device(object):
     
-    def __init__(self, port, hash, connection, type):
+    def __init__(self, port, nduid, connection, type):
         super(Device, self).__init__()
         self.port = port
-        self.hash = hash
+        self.nduid = nduid
         self.connection = connection
         self.type = type
         
     def __str__(self):
-        return "%d %s %s %s" % (self.port, self.hash, self.connection, self.type)
+        return "%d %s %s %s" % (self.port, self.nduid, self.connection, self.type)
 
 class Novacom(object):
     
@@ -34,6 +34,11 @@ class Novacom(object):
         s.connect(('localhost', port))
         s.send('put file://%s\n' % (path))
         s.send(struct.pack('<IIII',self.MAGIC,1,len(data),0)+data)
+        s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
+        s.send(struct.pack('<IIIII',0,1,0,0,0))
+        s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
+        s.send(struct.pack('<IIIII',2,0,0,0,0))
+        s.send('')
         s.close()
             
     def get(self, port, path):
@@ -55,8 +60,10 @@ class Novacom(object):
                     data.append(s.recv(1))
                     i += 1
                 header = struct.unpack('<IIII', s.recv(16))
-            print header
-            print [s.recv(header[2])]
+            #print header
+            #print struct.unpack('<IIIII', s.recv(header[2]))
+            #print struct.unpack('<IIII', s.recv(16))
+            #print struct.unpack('<IIIII', s.recv(header[2]))
         s.close()
         return "".join(data)
     
@@ -64,35 +71,48 @@ class Novacom(object):
         for d in n.devices:
             print d
 
-    def check_devices(self):
+    def check_devices(self, args):
         if not len(self.devices) > 0:
             print 'unable to find device'
             sys.exit(1)
+        port = self.devices[0].port
+        if args.nduid:
+            for device in self.devices:
+                if device.nduid == args.nduid:
+                    port = device.port
+        if args.port:
+            for device in self.devices:
+                if device.port == int(args.port):
+                    port = device.port
+        return port
     
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     group1 = parser.add_mutually_exclusive_group()
     group1.add_argument('-l','--list', action="store_true", dest="list", help='list devices')
-    group1.add_argument('--get', dest="get", help='get a remote FILE from device', metavar='FILE')
-    group1.add_argument('--put', dest="put", help='put a local FILE on device', metavar='FILE')
+    group1.add_argument('-g','--get', dest="get", help='get a remote FILE from device', metavar='FILE')
+    group1.add_argument('-p','--put', dest="put", help='put a local FILE on device', metavar='FILE')
     group2 = parser.add_mutually_exclusive_group()
-    group2.add_argument('--port', dest="port", help='connect to specific device by port', metavar='PORT')
-    group2.add_argument('--nduid', dest="nduid", help='connect to specific device by nduid', metavar='NDUID')
+    group2.add_argument('-N','--nduid', dest="nduid", help='connect to specific device by nduid', metavar='ID')
+    group2.add_argument('-P','--port', dest="port", help='connect to specific device by port', metavar='PORT')
     args = parser.parse_args()
-    
-    n = Novacom()
-        
-    if args.list:
-        n.list_devices()
-    elif args.get:
-        n.check_devices()
-        sys.stdout.write(n.get(n.devices[0].port, args.get))
-    elif args.put:
-        n.check_devices()
-        data = sys.stdin.read()
-        if data:
-            n.put(n.devices[0].port, args.put, data)
+
+    if args.list or args.get or args.put:
+        try:
+            n = Novacom()
+            if args.list:
+                n.list_devices()
+            elif args.get:
+                port = n.check_devices(args)
+                sys.stdout.write(n.get(port, args.get))
+            elif args.put:
+                port = n.check_devices(args)
+                data = sys.stdin.read()
+                if data:
+                    n.put(port, args.put, data)
+        except socket.error, msg:
+            print 'Failed to connect to novacomd'
     else:
         parser.print_help()
 
