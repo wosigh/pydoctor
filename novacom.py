@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import telnetlib, socket, struct, argparse
+import telnetlib, socket, struct, argparse, sys
 
 class Device(object):
     
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     if args.list:
         n.list_devices()
     elif args.get:
-        print n.get(n.devices[0].port, args.get)[:-1]
+        sys.stdout.write(n.get(n.devices[0].port, args.get))
     else:
         parser.print_help()
 
