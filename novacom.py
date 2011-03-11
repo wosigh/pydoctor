@@ -43,21 +43,16 @@ class Novacom(object):
             c = s.recv(1)
         if "".join(buf).split(' ')[0] == 'ok':
             header = struct.unpack('<IIII', s.recv(16))
-            print 'h: %d %d %d %d' % (header[0],header[1],header[2],header[3])
+            #print 'h: %d %d %d %d' % (header[0],header[1],header[2],header[3])
             while header[3] == 0:
-                tmp = ''
-                while len(tmp) < header[2]:
-                    buf = s.recv(header[2])
-                    print len(buf)
-                    tmp = "".join([tmp,"".join(buf)])
-                data.append(tmp)
+                i = 0
+                while i < header[2]:
+                    data.append(s.recv(1))
+                    i += 1
                 header = struct.unpack('<IIII', s.recv(16))
-                print 'h: %d %d %d %d' % (header[0],header[1],header[2],header[3])
-            print 'h: %d %d %d %d' % (header[0],header[1],header[2],header[3])
+                #print 'h: %d %d %d %d' % (header[0],header[1],header[2],header[3])
         s.close()
-        file = "".join(data)
-        print len(file)
-        return file
+        return "".join(data)
     
     def list_devices(self):
         for d in n.devices:
@@ -75,7 +70,7 @@ if __name__ == '__main__':
     if args.list:
         n.list_devices()
     elif args.get:
-        n.get(n.devices[0].port, args.get)
+        print n.get(n.devices[0].port, args.get)[:-1]
     else:
         parser.print_help()
 
