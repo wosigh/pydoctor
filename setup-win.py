@@ -11,10 +11,16 @@ py2exe_options = dict(
 setup(
     windows = [
         {
-            'script': 'installNovacom.py',
+            'script': 'novacomInstaller.py',
             'icon_resources': [(1, 'novacomInstaller.ico')]
         }
     ],
     options = {'py2exe': py2exe_options},
     zipfile = None,
+    description = 'Cross-platform novacom installer',
+    author = 'Webos-Internals',
+    maintainer = 'Ryan Hope',
+    maintainer_email = 'rmh3093@gmail.com',
+    version = '1.0',
+    name = 'novacomInstaller'
 )
