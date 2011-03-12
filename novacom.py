@@ -26,9 +26,11 @@ class Novacom(object):
         self._get_devices()
         
     def _get_devices(self):
-        for d in self.t.read_all()[:-1].split('\n'):
-            d = d.split(' ')
-            self.devices.append(Device(int(d[0]), d[1], d[2], d[3]))
+        data = self.t.read_all()
+        if data:
+            for d in data[:-1].split('\n'):
+                d = d.split(' ')
+                self.devices.append(Device(int(d[0]), d[1], d[2], d[3]))
             
     def put(self, port, path, data):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -106,13 +108,12 @@ if __name__ == '__main__':
     if args.list or args.get or args.put:
         try:
             n = Novacom()
+            port = n.check_devices(args)
             if args.list:
                 n.list_devices()
             elif args.get:
-                port = n.check_devices(args)
                 sys.stdout.write(n.get(port, args.get))
             elif args.put:
-                port = n.check_devices(args)
                 data = sys.stdin.read()
                 if data:
                     n.put(port, args.put, data)
