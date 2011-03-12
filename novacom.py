@@ -38,7 +38,6 @@ class Novacom(object):
         s.send(struct.pack('<IIIII',0,1,0,0,0))
         s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
         s.send(struct.pack('<IIIII',2,0,0,0,0))
-        s.send('')
         s.close()
             
     def get(self, port, path):
