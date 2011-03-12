@@ -33,11 +33,17 @@ class Novacom(object):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('localhost', port))
         s.send('put file://%s\n' % (path))
-        s.send(struct.pack('<IIII',self.MAGIC,1,len(data),0)+data)
-        s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
-        s.send(struct.pack('<IIIII',0,1,0,0,0))
-        s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
-        s.send(struct.pack('<IIIII',2,0,0,0,0))
+        buf = []
+        c = s.recv(1)
+        while c != '\n':
+            buf.append(c)
+            c = s.recv(1)
+        if "".join(buf).split(' ')[0] == 'ok':
+            s.send(struct.pack('<IIII',self.MAGIC,1,len(data),0)+data)
+            s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
+            s.send(struct.pack('<IIIII',0,1,0,0,0))
+            s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
+            s.send(struct.pack('<IIIII',2,0,0,0,0))
         s.close()
             
     def get(self, port, path):
