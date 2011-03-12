@@ -17,7 +17,8 @@ class Device(object):
 class Novacom(object):
     
     MAGIC = 0xdecafbad
-    
+    PACKET_MAX = 16384
+        
     def __init__(self):
         super(Novacom, self).__init__()
         self.devices = [] 
@@ -39,7 +40,14 @@ class Novacom(object):
             buf.append(c)
             c = s.recv(1)
         if "".join(buf).split(' ')[0] == 'ok':
-            s.send(struct.pack('<IIII',self.MAGIC,1,len(data),0)+data)
+            datalen = len(data)
+            written = 0
+            while written < datalen:
+                towrite = datalen - written
+                if towrite > self.PACKET_MAX:
+                    towrite = self.PACKET_MAX
+                s.send(struct.pack('<IIII',self.MAGIC,1,towrite,0)+data[written:written+towrite])
+                written += towrite
         s.close()
             
     def get(self, port, path):
