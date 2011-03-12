@@ -101,8 +101,8 @@ if __name__ == '__main__':
     group1.add_argument('-g','--get', dest="get", help='get a remote FILE from device', metavar='FILE')
     group1.add_argument('-p','--put', dest="put", help='put a local FILE on device', metavar='FILE')
     group2 = parser.add_mutually_exclusive_group()
-    group2.add_argument('-N','--nduid', dest="nduid", help='connect to specific device by nduid', metavar='ID')
     group2.add_argument('-P','--port', dest="port", help='connect to specific device by port', metavar='PORT')
+    group2.add_argument('-N','--nduid', dest="nduid", help='connect to specific device by nduid', metavar='ID')
     args = parser.parse_args()
 
     if args.list or args.get or args.put:
