@@ -74,6 +74,28 @@ class Novacom(object):
         s.close()
         return "".join(data)
     
+    def get(self, port, cmd):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('localhost', port))
+        s.send('run file://%s\n' % (cmd))
+        buf = []
+        data = []
+        c = s.recv(1)
+        header = (0,0,0,0)
+        while c != '\n':
+            buf.append(c)
+            c = s.recv(1)
+        if "".join(buf).split(' ')[0] == 'ok':
+            header = struct.unpack('<IIII', s.recv(16))
+            while header[3] == 0:
+                i = 0
+                while i < header[2]:
+                    data.append(s.recv(1))
+                    i += 1
+                header = struct.unpack('<IIII', s.recv(16))
+        s.close()
+        return "".join(data)
+    
     def list_devices(self):
         for d in n.devices:
             print d
@@ -100,12 +122,13 @@ if __name__ == '__main__':
     group1.add_argument('-l','--list', action="store_true", dest="list", help='list devices')
     group1.add_argument('-g','--get', dest="get", help='get a remote FILE from device', metavar='FILE')
     group1.add_argument('-p','--put', dest="put", help='put a local FILE on device', metavar='FILE')
+    group1.add_argument('-r','--run', dest="run", help='run a remote PROG with arguments', metavar='PROG')
     group2 = parser.add_mutually_exclusive_group()
     group2.add_argument('-P','--port', dest="port", help='connect to specific device by port', metavar='PORT')
     group2.add_argument('-N','--nduid', dest="nduid", help='connect to specific device by nduid', metavar='ID')
     args = parser.parse_args()
 
-    if args.list or args.get or args.put:
+    if args.list or args.get or args.put or args.run:
         try:
             n = Novacom()
             port = n.check_devices(args)
@@ -117,6 +140,8 @@ if __name__ == '__main__':
                 data = sys.stdin.read()
                 if data:
                     n.put(port, args.put, data)
+            elif args.run:
+                sys.stdout.write(n.get(port, args.run))
         except socket.error, msg:
             print msg
     else:
