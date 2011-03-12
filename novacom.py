@@ -40,10 +40,6 @@ class Novacom(object):
             c = s.recv(1)
         if "".join(buf).split(' ')[0] == 'ok':
             s.send(struct.pack('<IIII',self.MAGIC,1,len(data),0)+data)
-            s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
-            s.send(struct.pack('<IIIII',0,1,0,0,0))
-            s.send(struct.pack('<IIII',self.MAGIC,1,20,2))
-            s.send(struct.pack('<IIIII',2,0,0,0,0))
         s.close()
             
     def get(self, port, path):
