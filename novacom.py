@@ -65,10 +65,6 @@ class Novacom(object):
                     data.append(s.recv(1))
                     i += 1
                 header = struct.unpack('<IIII', s.recv(16))
-            #print header
-            #print struct.unpack('<IIIII', s.recv(header[2]))
-            #print struct.unpack('<IIII', s.recv(16))
-            #print struct.unpack('<IIIII', s.recv(header[2]))
         s.close()
         return "".join(data)
     
@@ -117,7 +113,7 @@ if __name__ == '__main__':
                 if data:
                     n.put(port, args.put, data)
         except socket.error, msg:
-            print 'Failed to connect to novacomd'
+            print msg
     else:
         parser.print_help()
 
