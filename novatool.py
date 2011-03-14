@@ -131,7 +131,7 @@ class NovacomRun(Novacom):
         self.gui.output.append(data)
     
     def cmd_stderr_event(self, data):
-        self.gui.output.append(data)
+        self.gui.output.append('<font color=red>%s</font>' %(data))
 
 class NovacomDebugClient(NovacomDebug):
     
