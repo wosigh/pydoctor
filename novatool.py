@@ -7,7 +7,7 @@ app = QApplication(sys.argv)
 qt4reactor.install()
 
 from twisted.internet import reactor
-from twisted.internet.protocol import ClientCreator, ClientFactory
+from twisted.internet.protocol import ClientCreator, ReconnectingClientFactory
 from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom, NovacomDebug
 
@@ -154,22 +154,24 @@ class DeviceTableModel(QAbstractTableModel):
             return self.headerdata[col]
         return None
 
-class DebugFactory(ClientFactory):
+class DebugFactory(ReconnectingClientFactory):
     
     def __init__(self, gui):
         self.gui = gui
     
     def buildProtocol(self, addr):
+        self.resetDelay()
         return NovacomDebugClient(self.gui)
     
     def startedConnecting(self, connector):
         self.gui.updateStatusBar(False, 'Connecting to novacomd ...')
 
     def clientConnectionLost(self, connector, reason):
-        pass
-        #self.gui.statusBar.showMessage('Disconnected from novacomd!')
+        ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+        self.gui.updateStatusBar(False, 'Connection to novacomd lost!')
 
     def clientConnectionFailed(self, connector, reason):
+        ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
         self.gui.updateStatusBar(False, 'Connection to novacomd failed!')
             
 class MainWindow(QMainWindow):
