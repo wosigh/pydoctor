@@ -100,6 +100,7 @@ class DeviceCollectorClient(DeviceCollector):
         self.gui.deviceList.resizeColumnsToContents()
         if info:
             self.gui.deviceList.selectRow(0)
+        self.gui.updateStatusBar(True, 'Connected to novacomd.')
         
 class DeviceTableModel(QAbstractTableModel): 
     
@@ -141,20 +142,19 @@ class DeviceFactory(ClientFactory):
         return DeviceCollectorClient(self.gui)
     
     def startedConnecting(self, connector):
-        pass
-        #self.gui.statusBar.showMessage('Connecting to novacomd ...')
+        self.gui.updateStatusBar(False, 'Connecting to novacomd ...')
 
     def clientConnectionLost(self, connector, reason):
         pass
         #self.gui.statusBar.showMessage('Disconnected from novacomd!')
 
     def clientConnectionFailed(self, connector, reason):
-        self.gui.statusBar.showMessage('Connection to novacomd failed!')
+        self.gui.updateStatusBar(False, 'Connection to novacomd failed!')
             
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.resize(600, 220)
+        self.setMinimumSize(620, 280)
         self.setWindowIcon(QIcon('novacomInstaller.ico'))
         
         screen = QDesktopWidget().screenGeometry()
@@ -199,7 +199,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Novatool 1.0')
         self.setUnifiedTitleAndToolBarOnMac(True)
         
+        self.icon_disconneced = QPixmap('network-disconnect.png')
+        self.icon_connected = QPixmap('network-connect.png')
         self.statusBar = QStatusBar()
+        self.statusIcon = QLabel()
+        self.statusMsg = QLabel()
+        self.updateStatusBar(False, None)
         self.setStatusBar(self.statusBar)
                 
         self.platform = platform.system()
@@ -208,6 +213,16 @@ class MainWindow(QMainWindow):
         reactor.connectTCP('localhost', 6968, DeviceFactory(self))
         
         self.show()
+        
+    def updateStatusBar(self, connected, msg):
+        if connected:
+            self.statusIcon.setPixmap(self.icon_connected)
+        else:
+            self.statusIcon.setPixmap(self.icon_disconneced)
+        self.statusBar.addWidget(self.statusIcon)
+        if msg:
+            self.statusMsg.setText(msg)
+            self.statusBar.addWidget(self.statusMsg)
         
     def getFile(self):
         selected = self.deviceList.selectedIndexes()
