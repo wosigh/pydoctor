@@ -127,6 +127,9 @@ class MainWindow(QMainWindow):
         self.hbox.addWidget(self.deviceList)
         
         self.buttons = QVBoxLayout()
+        self.logo = QLabel()
+        self.logo.setPixmap(QPixmap('novacomInstaller.ico').scaled(128,128))
+        self.buttons.addWidget(self.logo)
         self.getFileButton = QPushButton('Get File')
         QObject.connect(self.getFileButton, SIGNAL('clicked()'), self.getFile)
         self.buttons.addWidget(self.getFileButton)
