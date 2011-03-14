@@ -274,7 +274,7 @@ class MainWindow(QMainWindow):
         if self.platform == 'Darwin' or self.platform == 'Windows':
             self.driverInstallAction = QAction(self)
             self.driverInstallAction.setText('Install Novacom Driver')
-            QObject.connect(self.driverInstallAction, SIGNAL('triggered()'), self.installDriver)
+            QObject.connect(self.driverInstallAction, SIGNAL('triggered()'), self.installDriverDeferred)
             self.filemenu.addAction(self.driverInstallAction)
             self.filemenu.addSeparator()
         self.quitAction = QAction(self)
@@ -290,6 +290,9 @@ class MainWindow(QMainWindow):
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
+    
+    def installDriverDeferred(self):
+        QTimer.singleShot(0, self.installDriver)
         
     def installDriver(self):
         dl = download_novacom_installer(self.platform, jar, self.tempdir)
