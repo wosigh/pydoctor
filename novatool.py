@@ -22,6 +22,21 @@ class NovacomDevice(Novacom):
         self.transport.loseConnection()
                 
     def cmd_stdout(self, data):
+        #openb = QPushButton('Open')
+        #openb.setDefault(True)
+        #saveb = QPushButton('Save')
+        #saveb.setCheckable(True)
+        #saveb.setAutoDefault(False)
+        #buttonBox = QDialogButtonBox(Qt.Vertical);
+        #buttonBox.addButton(openb, QDialogButtonBox.ActionRole);
+        #buttonBox.addButton(saveb, QDialogButtonBox.ActionRole);
+        msgBox = QMessageBox()
+        msgBox.setText('The file has been retrieved successfully.')
+        msgBox.setInformativeText('Do you want to save the file?')
+        msgBox.setStandardButtons(QMessageBox.Discard | QMessageBox.Save)
+        msgBox.setDefaultButton(QMessageBox.Save)
+        msgBox.setDetailedText(data)
+        ret = msgBox.exec_()
         sys.stdout.write(data)
         
     def cmd_stderr(self, data):
