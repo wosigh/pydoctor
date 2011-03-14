@@ -148,12 +148,10 @@ class DeviceCollectorClient(DeviceCollector):
         if info:
             self.gui.deviceList.setVisible(True)
             self.gui.noDevices.setVisible(False)
-            self.gui.deviceList.horizontalHeader().setVisible(True)
             self.gui.deviceList.selectRow(0)
         else:
             self.gui.deviceList.setVisible(False)
             self.gui.noDevices.setVisible(True)
-            self.gui.deviceList.horizontalHeader().setVisible(False)
         
         
 class DeviceTableModel(QAbstractTableModel): 
