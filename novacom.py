@@ -74,7 +74,7 @@ class Novacom(object):
         s.close()
         return "".join(data)
     
-    def get(self, port, cmd):
+    def run(self, port, cmd):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('localhost', port))
         s.send('run file://%s\n' % (cmd))
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                 if data:
                     n.put(port, args.put, data)
             elif args.run:
-                sys.stdout.write(n.get(port, args.run))
+                sys.stdout.write(n.run(port, args.run))
         except socket.error, msg:
             print msg
     else:
