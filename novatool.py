@@ -156,8 +156,8 @@ class DeviceTableModel(QAbstractTableModel):
 
 class DebugFactory(ReconnectingClientFactory):
     
-    maxDelay = 5
-    factor = 1.1
+    maxDelay = 10
+    factor = 1.05
     
     def __init__(self, gui):
         self.gui = gui
