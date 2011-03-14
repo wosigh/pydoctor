@@ -1,7 +1,9 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import qt4reactor
-import sys, tempfile, shutil, subprocess, os, platform, struct
+import sys, tempfile, shutil, subprocess, os, platform, struct, tarfile
+from systeminfo import *
+from httpunzip import *
 
 app = QApplication(sys.argv)
 qt4reactor.install()
@@ -10,6 +12,24 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ClientCreator, ReconnectingClientFactory
 from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom, NovacomDebug
+
+jar = 'http://palm.cdnetworks.net/rom/pre2/p201r0d11242010/wrep201rod/webosdoctorp102ueuna-wr.jar'
+       
+NOVA_WIN32  = 'resources/NovacomInstaller_x86.msi'
+NOVA_WIN64  = 'resources/NovacomInstaller_x64.msi'
+NOVA_MACOSX = 'resources/NovacomInstaller.pkg.tar.gz'
+
+def download_novacom_installer(platform, url, path):
+    dl = None
+    if platform == 'Windows':
+        info = systeminfo()
+        if info['System Type'].split('-')[0] == 'x64':
+            dl = http_unzip(url, [NOVA_WIN64], path, strip=True)
+        else:
+            dl = http_unzip(url, [NOVA_WIN32], path, strip=True)
+    elif platform == 'Darwin':
+        dl = http_unzip(url, [NOVA_MACOSX], path, strip=True)
+    return dl[0]
 
 def cmd_getFile(protocol, file):
     
@@ -189,6 +209,10 @@ class DebugFactory(ReconnectingClientFactory):
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        
+        self.platform = platform.system()
+        self.tempdir = path = tempfile.mkdtemp()
+        
         self.setMinimumSize(620, 280)
         self.setWindowIcon(QIcon('novacomInstaller.ico'))
         
@@ -247,21 +271,40 @@ class MainWindow(QMainWindow):
                 
         self.menuBar = QMenuBar()
         self.filemenu = QMenu('File')
-        self.filemenu.addAction('Install Novacom Driver')
-        self.filemenu.addSeparator()
-        self.filemenu.addAction('Quit')
+        if self.platform == 'Darwin' or self.platform == 'Windows':
+            self.driverInstallAction = QAction(self)
+            self.driverInstallAction.setText('Install Novacom Driver')
+            QObject.connect(self.driverInstallAction, SIGNAL('triggered()'), self.installDriver)
+            self.filemenu.addAction(self.driverInstallAction)
+            self.filemenu.addSeparator()
+        self.quitAction = QAction(self)
+        self.quitAction.setText('Quit')
+        QObject.connect(self.quitAction, SIGNAL('triggered()'), self.quitApp)
+        self.filemenu.addAction(self.quitAction)
         self.menuBar.addMenu(self.filemenu)
         self.aboutmenu = QMenu('Help')
         self.aboutmenu.addAction('About')
         self.menuBar.addMenu(self.aboutmenu)
         self.setMenuBar(self.menuBar)
-                
-        self.platform = platform.system()
-        self.tempdir = path = tempfile.mkdtemp()
-        
+                        
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
+        
+    def installDriver(self):
+        dl = download_novacom_installer(self.platform, jar, self.tempdir)
+        if dl:
+            if self.platform == 'Darwin':
+                tf = tarfile.open(dl)
+                tf.extractall(self.tempdir)
+                tf.close() 
+                subprocess.call(['open','-W',dl[:-7]])  
+            else:
+                subprocess.call(['msiexec','/i',dl])
+        
+    def quitApp(self):
+        reactor.stop()
+        QApplication.quit()
         
     def updateStatusBar(self, connected, msg):
         if connected:
