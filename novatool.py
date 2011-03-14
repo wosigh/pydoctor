@@ -94,6 +94,12 @@ class NovacomDebugClient(NovacomDebug):
     def connectionMade(self):
         self.gui.updateStatusBar(True, 'Connected to novacomd.')
         ClientCreator(reactor, DeviceCollectorClient, self.gui).connectTCP('localhost', 6968)
+
+    def connectionLost(self, reason):
+        self.gui.updateStatusBar(False, 'Connection to novacomd lost.')
+        self.gui.deviceListModel = DeviceTableModel([], self.gui.deviceListHeader, self.gui)
+        self.gui.deviceList.setModel(self.gui.deviceListModel)
+        self.gui.deviceList.horizontalHeader().setVisible(False)
         
     def devicesChanged(self):
         ClientCreator(reactor, DeviceCollectorClient, self.gui).connectTCP('localhost', 6968)
@@ -111,7 +117,10 @@ class DeviceCollectorClient(DeviceCollector):
         self.gui.deviceList.setModel(self.gui.deviceListModel)
         self.gui.deviceList.resizeColumnsToContents()
         if info:
+            self.gui.deviceList.horizontalHeader().setVisible(True)
             self.gui.deviceList.selectRow(0)
+        else:
+            self.gui.deviceList.horizontalHeader().setVisible(False)
         
         
 class DeviceTableModel(QAbstractTableModel): 
