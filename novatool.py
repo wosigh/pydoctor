@@ -228,7 +228,6 @@ class MainWindow(QMainWindow):
         self.noDevices = QLabel('<h1>No Connected Devices</h1>')
         self.noDevices.setAlignment(Qt.AlignCenter)
         self.noDevices.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        #self.noDevices.setStyleSheet("QWidget { font-size: 200%}")
         self.hbox.addWidget(self.noDevices)
         self.hbox.setStretch(0,1)
         
