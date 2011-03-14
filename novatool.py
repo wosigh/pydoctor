@@ -215,7 +215,7 @@ class MainWindow(QMainWindow):
         self.platform = platform.system()
         self.tempdir = path = tempfile.mkdtemp()
         
-        self.setMinimumSize(620, 280)
+        self.setMinimumSize(640, 280)
         self.setWindowIcon(QIcon('novacomInstaller.ico'))
         
         screen = QDesktopWidget().screenGeometry()
