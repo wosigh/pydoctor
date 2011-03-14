@@ -1,7 +1,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import qt4reactor
-import sys
+import sys, tempfile, shutil, subprocess, os, platform
 
 app = QApplication(sys.argv)
 qt4reactor.install()
@@ -28,7 +28,7 @@ class NovacomDevice(Novacom):
         msgBox = QMessageBox()
         msgBox.setText('The file has been retrieved successfully.')
         msgBox.setInformativeText('Do you want to save the file?')
-        msgBox.setStandardButtons(QMessageBox.Discard | QMessageBox.Save)
+        msgBox.setStandardButtons(QMessageBox.Discard | QMessageBox.Open | QMessageBox.Save )
         msgBox.setDefaultButton(QMessageBox.Save)
         msgBox.setDetailedText(data)
         ret = msgBox.exec_()
@@ -40,7 +40,17 @@ class NovacomDevice(Novacom):
                 f = open(str(filename[0]), 'w')
                 f.write(data)
                 f.close()
-        
+        elif ret == QMessageBox.Open:
+            f = tempfile.NamedTemporaryFile(dir=self.gui.tempdir, delete=False)
+            f.write(data)
+            f.close()
+            if self.gui.platform == 'Darwin':
+                subprocess.call(['open',f.name])
+            elif self.gui.platform == 'Windows':
+                subprocess.call(['start',f.name])
+            else:
+                subprocess.call(['xdg-open',f.name])
+                
     def cmd_stderr(self, data):
         sys.stderr.write(data)
 
@@ -137,6 +147,9 @@ class MainWindow(QMainWindow):
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
                 
+        self.platform = platform.system()
+        self.tempdir = path = tempfile.mkdtemp()
+                
         ClientCreator(reactor, DeviceCollectorClient, self).connectTCP('localhost', 6968)
         self.show()
         
@@ -166,4 +179,6 @@ class MainWindow(QMainWindow):
         
 if __name__ == '__main__':
     mainWin = MainWindow()
-    sys.exit(reactor.run())
+    ret = reactor.run()
+    shutil.rmtree(mainWin.tempdir)
+    sys.exit(ret)
