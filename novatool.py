@@ -1,7 +1,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import qt4reactor
-import sys, tempfile, shutil, subprocess, os, platform
+import sys, tempfile, shutil, subprocess, os, platform, struct
 
 app = QApplication(sys.argv)
 qt4reactor.install()
@@ -10,13 +10,19 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ClientCreator
 from novacom2 import DeviceCollector, Novacom
 
-def sendCommand(protocol, command):
-    protocol.command = command
-    protocol.transport.write('%s\n' % (command))
-
-class NovacomDevice(Novacom):
+def cmd_getFile(protocol, file):
     
-    command = None
+    protocol.file__ = file
+    protocol.transport.write('get file://%s\n' % (file))
+
+def cmd_sendFile(protocol, file, dest):
+    
+    protocol.file__ = file
+    protocol.transport.write('put file://%s\n' % (dest))
+
+class NovacomGet(Novacom):
+    
+    file__ = None
 
     def __init__(self, gui):
         self.gui = gui
@@ -34,7 +40,7 @@ class NovacomDevice(Novacom):
         ret = msgBox.exec_()
         
         if ret == QMessageBox.Save:
-            filename = self.command.split('/')[-1]
+            filename = self.file__.split('/')[-1]
             filename = QFileDialog.getSaveFileName(self.gui, 'Save file', filename)
             if filename:
                 f = open(str(filename[0]), 'w')
@@ -50,9 +56,34 @@ class NovacomDevice(Novacom):
                 subprocess.call(['start',f.name])
             else:
                 subprocess.call(['xdg-open',f.name])
-                
-    def cmd_stderr(self, data):
-        sys.stderr.write(data)
+
+class NovacomSend(Novacom):
+    
+    file__ = None
+
+    def __init__(self, gui):
+        self.gui = gui
+        
+    def cmd_status(self, msg):
+        msgBox = QMessageBox()
+        ok = False
+        if msg == 'ok 0':
+            datalen = len(self.file__)
+            written = 0
+            while written < datalen:
+                towrite = datalen - written
+                if towrite > self.PACKET_MAX:
+                    towrite = self.PACKET_MAX
+                self.transport.write(struct.pack('<IIII',self.MAGIC,1,towrite,0)+self.file__[written:written+towrite])
+                written += towrite
+            self.transport.loseConnection()
+            ok = True
+        if ok:
+            msgBox.setText('The file has been sent successfully.')
+        else:
+            msgBox.setText('The file fail to be sent.')
+            msgBox.setInformativeText(msg)
+        msgBox.exec_()
 
 class DeviceCollectorClient(DeviceCollector):
     
@@ -164,14 +195,24 @@ class MainWindow(QMainWindow):
             filename, ok = QInputDialog.getText(self, 'Get file', 'Path to file:')
             if ok:
                 port = self.deviceListModel.arraydata[selected[0].row()][0]
-                c = ClientCreator(reactor, NovacomDevice, self)
+                c = ClientCreator(reactor, NovacomGet, self)
                 d = c.connectTCP('localhost', port)
-                d.addCallback(sendCommand, 'get file://%s' % (str(filename)))
+                d.addCallback(sendCommand, str(filename))
                 
     def sendFile(self):
-        print 'sendFile'
-        filename = QFileDialog.getOpenFileName(self, caption='Send file')
-        print filename
+        selected = self.deviceList.selectedIndexes()
+        if selected:
+            infile = QFileDialog.getOpenFileName(self, caption='Send file')
+            if infile[0]:
+                outfile, ok = QInputDialog.getText(self, 'Send file', 'Path to file:')
+                if ok:
+                    f = open(str(infile[0]),'r')
+                    data = f.read()
+                    f.close()
+                    port = self.deviceListModel.arraydata[selected[0].row()][0]
+                    c = ClientCreator(reactor, NovacomSend, self)
+                    d = c.connectTCP('localhost', port)
+                    d.addCallback(cmd_sendFile, data, str(outfile))
         
     def runCommand(self):
         print 'runCommand'

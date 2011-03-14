@@ -4,12 +4,12 @@ from twisted.internet import reactor, protocol
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet.endpoints import TCP4ClientEndpoint
 
-def sendCommand(protocol, command):
-    protocol.transport.write('%s\n' %(command))
-          
 class Novacom(Protocol):
     
-    stdout = ''
+    MAGIC = 0xdecafbad
+    PACKET_MAX = 16384
+    
+    stdout_ = ''
     stderr = ''
     buffer = ''
     ret = None
@@ -53,11 +53,15 @@ class Novacom(Protocol):
                 i = self.buffer.find('\n')
                 msg = self.buffer[:i]
                 if msg == 'ok 0':
+                    self.cmd_status(msg)
                     self.status = True
                     self.buffer = self.buffer[i+1:]
                 else:
                     self.error(msg)
                     self._reset()
+                    
+    def cmd_status(self, msg):
+        pass
                 
     def cmd_return(self, ret):
         pass
@@ -78,12 +82,6 @@ class Novacom(Protocol):
         self.oob = None
         self.header = None
         self.status = False
-        
-    def connectionMade(self):
-        pass
-    
-    def connectionLost(self, reason):
-        pass
         
 class DeviceCollector(Protocol):
     
