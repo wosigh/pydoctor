@@ -125,13 +125,13 @@ class NovacomRun(Novacom):
         self.gui = gui
         
     def cmd_return(self, ret):
-        print ret
+        pass
     
     def cmd_stdout_event(self, data):
-        print data
+        self.gui.output.append(data)
     
     def cmd_stderr_event(self, data):
-        print data
+        self.gui.output.append(data)
 
 class NovacomDebugClient(NovacomDebug):
     
@@ -225,7 +225,40 @@ class DebugFactory(ReconnectingClientFactory):
     def clientConnectionFailed(self, connector, reason):
         ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
         self.gui.updateStatusBar(False, 'Connection to novacomd failed!')
-            
+
+class RunDlg(QDialog):
+    
+    def __init__(self, port, parent=None):
+        super(RunDlg, self).__init__(parent)
+        self.port = port
+        self.setMinimumSize(680, 280)
+        buttonBox = QDialogButtonBox()
+        closeButton = buttonBox.addButton(buttonBox.Close)
+        QObject.connect(closeButton, SIGNAL('clicked()'), self.close)
+        self.output = QTextEdit()
+        self.output.setReadOnly(True)
+        cmdlayout = QHBoxLayout()
+        cmdLabel = QLabel('Command:')
+        self.cmd = QLineEdit()
+        run = QPushButton('Run')
+        QObject.connect(run, SIGNAL('clicked()'), self.run)
+        cmdlayout.addWidget(cmdLabel)
+        cmdlayout.addWidget(self.cmd)
+        cmdlayout.addWidget(run)
+        layout = QVBoxLayout()
+        layout.addLayout(cmdlayout)
+        layout.addWidget(self.output)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+        self.setWindowTitle("Run Command")
+        
+    def run(self):
+        if self.cmd.text():
+            self.output.clear()
+            c = ClientCreator(reactor, NovacomRun, self)
+            d = c.connectTCP('localhost', self.port)
+            d.addCallback(cmd_run, str(self.cmd.text()))
+        
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -384,15 +417,12 @@ class MainWindow(QMainWindow):
     def runCommand(self):
         selected = self.deviceList.selectedIndexes()
         if selected:
-            command, ok = QInputDialog.getText(self, 'Run command', 'Command:')
-            if ok:
-                port = self.deviceListModel.arraydata[selected[0].row()][0]
-                c = ClientCreator(reactor, NovacomRun, self)
-                d = c.connectTCP('localhost', port)
-                d.addCallback(cmd_run, str(command))
+            port = self.deviceListModel.arraydata[selected[0].row()][0]
+            dialog = RunDlg(port, self)
+            dialog.show()
         
     def installIPKG(self):
-        print 'installIPKG'
+        pass
         
     def closeEvent(self, event=None):
         reactor.stop()
