@@ -298,7 +298,7 @@ class MainWindow(QMainWindow):
                 tf = tarfile.open(dl)
                 tf.extractall(self.tempdir)
                 tf.close() 
-                subprocess.call(['open','-W',dl[:-7]])  
+                subprocess.call(['open',dl[:-7]])  
             else:
                 subprocess.call(['msiexec','/i',dl])
         
