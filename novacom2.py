@@ -26,7 +26,7 @@ class Novacom(Protocol):
     MAGIC = 0xdecafbad
     PACKET_MAX = 16384
     
-    stdout_ = ''
+    stdout = ''
     stderr = ''
     buffer = ''
     ret = None
@@ -44,11 +44,15 @@ class Novacom(Protocol):
                 if self.header: 
                     if len(self.buffer) >= self.header[2]:
                         if self.header[3] == 0:
-                            self.stdout = ''.join([self.stdout, self.buffer[:self.header[2]]])
+                            new = self.buffer[:self.header[2]]
+                            self.cmd_stdout_event(new)
+                            self.stdout = ''.join([self.stdout, new])
                             self.buffer = self.buffer[self.header[2]:]
                             self.header = None
                         elif self.header[3] == 1:
-                            self.stderr = ''.join([self.stderr, self.buffer[:self.header[2]]])
+                            new = self.buffer[:self.header[2]]
+                            self.cmd_stderr_event(new)
+                            self.stderr = ''.join([self.stderr, new])
                             self.buffer = self.buffer[self.header[2]:]
                             self.header = None
                         elif self.header[3] == 2:
@@ -82,15 +86,21 @@ class Novacom(Protocol):
                 
     def cmd_return(self, ret):
         pass
+    
+    def cmd_stdout_event(self, data):
+        pass
+    
+    def cmd_stderr_event(self, data):
+        pass
                 
     def cmd_stdout(self, data):
-        sys.stdout.write(data)
+        pass
         
     def cmd_stderr(self, data):
-        sys.stderr.write(data)
+        pass
     
     def error(self, error):
-        print error
+        pass
         
     def _reset(self):
         self.stdout = ''

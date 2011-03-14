@@ -46,6 +46,10 @@ def cmd_memBoot(protocol, file):
     protocol.file__ = file
     protocol.transport.write('boot mem://%s\n')
 
+def cmd_run(protocol, command):
+    
+    protocol.transport.write('run file://%s\n' % (command))
+
 class NovacomGet(Novacom):
     
     file__ = None
@@ -114,6 +118,20 @@ class NovacomSend(Novacom):
             msgBox.setText('The file fail to be sent.')
             msgBox.setInformativeText(msg)
         msgBox.exec_()
+        
+class NovacomRun(Novacom):
+
+    def __init__(self, gui):
+        self.gui = gui
+        
+    def cmd_return(self, ret):
+        print ret
+    
+    def cmd_stdout_event(self, data):
+        print data
+    
+    def cmd_stderr_event(self, data):
+        print data
 
 class NovacomDebugClient(NovacomDebug):
     
@@ -333,7 +351,7 @@ class MainWindow(QMainWindow):
                 port = self.deviceListModel.arraydata[selected[0].row()][0]
                 c = ClientCreator(reactor, NovacomGet, self)
                 d = c.connectTCP('localhost', port)
-                d.addCallback(sendCommand, str(filename))
+                d.addCallback(cmd_getFile, str(filename))
                 
     def sendFile(self):
         selected = self.deviceList.selectedIndexes()
@@ -364,7 +382,14 @@ class MainWindow(QMainWindow):
                 d.addCallback(cmd_memBoot, data)
         
     def runCommand(self):
-        print 'runCommand'
+        selected = self.deviceList.selectedIndexes()
+        if selected:
+            command, ok = QInputDialog.getText(self, 'Run command', 'Command:')
+            if ok:
+                port = self.deviceListModel.arraydata[selected[0].row()][0]
+                c = ClientCreator(reactor, NovacomRun, self)
+                d = c.connectTCP('localhost', port)
+                d.addCallback(cmd_run, str(command))
         
     def installIPKG(self):
         print 'installIPKG'
