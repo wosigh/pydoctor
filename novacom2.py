@@ -2,7 +2,25 @@ import struct, sys
 
 from twisted.internet import reactor, protocol
 from twisted.internet.protocol import Factory, Protocol
+from twisted.protocols.basic import LineReceiver
 from twisted.internet.endpoints import TCP4ClientEndpoint
+
+class NovacomDebug(LineReceiver):
+    
+    delimiter = '\n'
+    
+    def lineReceived(self, line):
+        tmp = line
+        i = tmp.find(']')
+        date = tmp[:i+1]
+        tmp = tmp[i+2:]
+        i = tmp.find(' ')
+        cmd = tmp[:i].split(':')[0]
+        if cmd == 'removing' or cmd == 'dev':
+            self.devicesChanged()
+            
+    def devicesChanged(self):
+        pass
 
 class Novacom(Protocol):
     
@@ -88,6 +106,7 @@ class DeviceCollector(Protocol):
     devices = []
     
     def dataReceived(self, data):
+        self.devices = []
         for d in data[:-1].split('\n'):
             d = d.split(' ')
             self.devices.append((int(d[0]), d[1], d[2], d[3]))

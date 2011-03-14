@@ -9,7 +9,7 @@ qt4reactor.install()
 from twisted.internet import reactor
 from twisted.internet.protocol import ClientCreator, ClientFactory
 from twisted.internet.error import ConnectionRefusedError
-from novacom2 import DeviceCollector, Novacom
+from novacom2 import DeviceCollector, Novacom, NovacomDebug
 
 def cmd_getFile(protocol, file):
     
@@ -86,6 +86,18 @@ class NovacomSend(Novacom):
             msgBox.setInformativeText(msg)
         msgBox.exec_()
 
+class NovacomDebugClient(NovacomDebug):
+    
+    def __init__(self, gui):
+        self.gui = gui
+        
+    def connectionMade(self):
+        self.gui.updateStatusBar(True, 'Connected to novacomd.')
+        ClientCreator(reactor, DeviceCollectorClient, self.gui).connectTCP('localhost', 6968)
+        
+    def devicesChanged(self):
+        ClientCreator(reactor, DeviceCollectorClient, self.gui).connectTCP('localhost', 6968)
+        
 class DeviceCollectorClient(DeviceCollector):
     
     def __init__(self, gui):
@@ -100,7 +112,7 @@ class DeviceCollectorClient(DeviceCollector):
         self.gui.deviceList.resizeColumnsToContents()
         if info:
             self.gui.deviceList.selectRow(0)
-        self.gui.updateStatusBar(True, 'Connected to novacomd.')
+        
         
 class DeviceTableModel(QAbstractTableModel): 
     
@@ -133,13 +145,13 @@ class DeviceTableModel(QAbstractTableModel):
             return self.headerdata[col]
         return None
 
-class DeviceFactory(ClientFactory):
+class DebugFactory(ClientFactory):
     
     def __init__(self, gui):
         self.gui = gui
     
     def buildProtocol(self, addr):
-        return DeviceCollectorClient(self.gui)
+        return NovacomDebugClient(self.gui)
     
     def startedConnecting(self, connector):
         self.gui.updateStatusBar(False, 'Connecting to novacomd ...')
@@ -209,8 +221,8 @@ class MainWindow(QMainWindow):
                 
         self.platform = platform.system()
         self.tempdir = path = tempfile.mkdtemp()
-                
-        reactor.connectTCP('localhost', 6968, DeviceFactory(self))
+        
+        reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
         
