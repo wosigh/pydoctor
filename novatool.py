@@ -7,7 +7,8 @@ app = QApplication(sys.argv)
 qt4reactor.install()
 
 from twisted.internet import reactor
-from twisted.internet.protocol import ClientCreator
+from twisted.internet.protocol import ClientCreator, ClientFactory
+from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom
 
 def cmd_getFile(protocol, file):
@@ -131,6 +132,24 @@ class DeviceTableModel(QAbstractTableModel):
             return self.headerdata[col]
         return None
 
+class DeviceFactory(ClientFactory):
+    
+    def __init__(self, gui):
+        self.gui = gui
+    
+    def buildProtocol(self, addr):
+        return DeviceCollectorClient(self.gui)
+    
+    def startedConnecting(self, connector):
+        pass
+        #self.gui.statusBar.showMessage('Connecting to novacomd ...')
+
+    def clientConnectionLost(self, connector, reason):
+        pass
+        #self.gui.statusBar.showMessage('Disconnected from novacomd!')
+
+    def clientConnectionFailed(self, connector, reason):
+        self.gui.statusBar.showMessage('Connection to novacomd failed!')
             
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -186,7 +205,8 @@ class MainWindow(QMainWindow):
         self.platform = platform.system()
         self.tempdir = path = tempfile.mkdtemp()
                 
-        ClientCreator(reactor, DeviceCollectorClient, self).connectTCP('localhost', 6968)
+        reactor.connectTCP('localhost', 6968, DeviceFactory(self))
+        
         self.show()
         
     def getFile(self):
