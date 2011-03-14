@@ -247,6 +247,8 @@ class MainWindow(QMainWindow):
                 
         self.menuBar = QMenuBar()
         self.filemenu = QMenu('File')
+        self.filemenu.addAction('Install Novacom Driver')
+        self.filemenu.addSeparator()
         self.filemenu.addAction('Quit')
         self.menuBar.addMenu(self.filemenu)
         self.aboutmenu = QMenu('Help')
