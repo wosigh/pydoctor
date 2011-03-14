@@ -21,7 +21,7 @@ def cmd_sendFile(protocol, file, dest):
     protocol.file__ = file
     protocol.transport.write('put file://%s\n' % (dest))
     
-def cmd_sendFile(protocol, file):
+def cmd_memBoot(protocol, file):
     
     protocol.file__ = file
     protocol.transport.write('boot mem://%s\n')
@@ -82,6 +82,10 @@ class NovacomSend(Novacom):
                     towrite = self.PACKET_MAX
                 self.transport.write(struct.pack('<IIII',self.MAGIC,1,towrite,0)+self.file__[written:written+towrite])
                 written += towrite
+            self.transport.write(struct.pack('<IIII',self.MAGIC,1,20,2))
+            self.transport.write(struct.pack('<IIIII',0,0,0,0,0))
+            self.transport.write(struct.pack('<IIII',self.MAGIC,1,20,2))
+            self.transport.write(struct.pack('<IIIII',2,0,0,0,0))
             self.transport.loseConnection()
             ok = True
         if ok:
