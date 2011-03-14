@@ -243,8 +243,10 @@ class MainWindow(QMainWindow):
                 
         self.menuBar = QMenuBar()
         self.filemenu = QMenu('File')
+        self.filemenu.addAction('Quit')
         self.menuBar.addMenu(self.filemenu)
-        self.aboutmenu = QMenu('About')
+        self.aboutmenu = QMenu('Help')
+        self.aboutmenu.addAction('About')
         self.menuBar.addMenu(self.aboutmenu)
         self.setMenuBar(self.menuBar)
                 
