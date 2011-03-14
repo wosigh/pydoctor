@@ -66,6 +66,8 @@ class DeviceCollectorClient(DeviceCollector):
         self.gui.deviceListModel = DeviceTableModel(info, self.gui.deviceListHeader, self.gui)
         self.gui.deviceList.setModel(self.gui.deviceListModel)
         self.gui.deviceList.resizeColumnsToContents()
+        if info:
+            self.gui.deviceList.selectRow(0)
         
 class DeviceTableModel(QAbstractTableModel): 
     
