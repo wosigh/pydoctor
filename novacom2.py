@@ -3,7 +3,6 @@ import struct, sys
 from twisted.internet import reactor, protocol
 from twisted.internet.protocol import Factory, Protocol
 from twisted.protocols.basic import LineReceiver
-from twisted.internet.endpoints import TCP4ClientEndpoint
 
 class NovacomDebug(LineReceiver):
     
