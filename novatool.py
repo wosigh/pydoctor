@@ -146,9 +146,13 @@ class DeviceCollectorClient(DeviceCollector):
         self.gui.deviceList.setModel(self.gui.deviceListModel)
         self.gui.deviceList.resizeColumnsToContents()
         if info:
+            self.gui.deviceList.setVisible(True)
+            self.gui.noDevices.setVisible(False)
             self.gui.deviceList.horizontalHeader().setVisible(True)
             self.gui.deviceList.selectRow(0)
         else:
+            self.gui.deviceList.setVisible(False)
+            self.gui.noDevices.setVisible(True)
             self.gui.deviceList.horizontalHeader().setVisible(False)
         
         
@@ -223,6 +227,12 @@ class MainWindow(QMainWindow):
         self.novatool = QWidget(self)
         self.hbox = QHBoxLayout()
         
+        self.noDevices = QLabel('There are no connected devices.')
+        self.noDevices.setAlignment(Qt.AlignCenter)
+        self.noDevices.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.hbox.addWidget(self.noDevices)
+        self.hbox.setStretch(0,1)
+        
         self.deviceList = QTableView()
         self.deviceListHeader = ['Port','Device','NDUID']
         self.deviceListModel = DeviceTableModel([], self.deviceListHeader, self)
@@ -233,6 +243,7 @@ class MainWindow(QMainWindow):
         self.deviceList.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.deviceList.setSelectionMode(QAbstractItemView.SingleSelection)
         self.deviceList.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.deviceList.setVisible(False)
         self.hbox.addWidget(self.deviceList)
         
         self.buttons = QVBoxLayout()
