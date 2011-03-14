@@ -51,7 +51,7 @@ class Novacom(Protocol):
                     self.status = True
                     self.buffer = ''
                 else:
-                    self._error(msg)
+                    self.error(msg)
                     self._reset()
                 
     def cmd_return(self, ret):

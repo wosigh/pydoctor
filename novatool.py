@@ -11,9 +11,12 @@ from twisted.internet.protocol import ClientCreator
 from novacom2 import DeviceCollector, Novacom
 
 def sendCommand(protocol, command):
+    protocol.command = command
     protocol.transport.write('%s\n' % (command))
 
 class NovacomDevice(Novacom):
+    
+    command = None
 
     def __init__(self, gui):
         self.gui = gui
@@ -22,14 +25,6 @@ class NovacomDevice(Novacom):
         self.transport.loseConnection()
                 
     def cmd_stdout(self, data):
-        #openb = QPushButton('Open')
-        #openb.setDefault(True)
-        #saveb = QPushButton('Save')
-        #saveb.setCheckable(True)
-        #saveb.setAutoDefault(False)
-        #buttonBox = QDialogButtonBox(Qt.Vertical);
-        #buttonBox.addButton(openb, QDialogButtonBox.ActionRole);
-        #buttonBox.addButton(saveb, QDialogButtonBox.ActionRole);
         msgBox = QMessageBox()
         msgBox.setText('The file has been retrieved successfully.')
         msgBox.setInformativeText('Do you want to save the file?')
@@ -37,7 +32,14 @@ class NovacomDevice(Novacom):
         msgBox.setDefaultButton(QMessageBox.Save)
         msgBox.setDetailedText(data)
         ret = msgBox.exec_()
-        sys.stdout.write(data)
+        
+        if ret == QMessageBox.Save:
+            filename = self.command.split('/')[-1]
+            filename = QFileDialog.getSaveFileName(self.gui, 'Save file', filename)
+            if filename:
+                f = open(str(filename[0]), 'w')
+                f.write(data)
+                f.close()
         
     def cmd_stderr(self, data):
         sys.stderr.write(data)
@@ -76,9 +78,9 @@ class DeviceTableModel(QAbstractTableModel):
     
     def data(self, index, role): 
         if not index.isValid(): 
-            return None 
+            return None
         elif role != Qt.DisplayRole: 
-            return None 
+            return None
         return self.arraydata[index.row()][index.column()] 
     
     def headerData(self, col, orientation, role):
