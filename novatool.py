@@ -20,6 +20,11 @@ def cmd_sendFile(protocol, file, dest):
     
     protocol.file__ = file
     protocol.transport.write('put file://%s\n' % (dest))
+    
+def cmd_sendFile(protocol, file):
+    
+    protocol.file__ = file
+    protocol.transport.write('boot mem://%s\n')
 
 class NovacomGet(Novacom):
     
@@ -212,6 +217,9 @@ class MainWindow(QMainWindow):
         self.sendFileButton = QPushButton('Send File')
         QObject.connect(self.sendFileButton, SIGNAL('clicked()'), self.sendFile)
         self.buttons.addWidget(self.sendFileButton)
+        self.memBootButton = QPushButton('Mem Boot')
+        QObject.connect(self.memBootButton, SIGNAL('clicked()'), self.memBoot)
+        self.buttons.addWidget(self.memBootButton)
         self.runCommandButton = QPushButton('Run Command')
         QObject.connect(self.runCommandButton, SIGNAL('clicked()'), self.runCommand)
         self.buttons.addWidget(self.runCommandButton)
@@ -232,6 +240,13 @@ class MainWindow(QMainWindow):
         self.statusMsg = QLabel()
         self.updateStatusBar(False, None)
         self.setStatusBar(self.statusBar)
+                
+        self.menuBar = QMenuBar()
+        self.filemenu = QMenu('File')
+        self.menuBar.addMenu(self.filemenu)
+        self.aboutmenu = QMenu('About')
+        self.menuBar.addMenu(self.aboutmenu)
+        self.setMenuBar(self.menuBar)
                 
         self.platform = platform.system()
         self.tempdir = path = tempfile.mkdtemp()
@@ -273,7 +288,20 @@ class MainWindow(QMainWindow):
                     port = self.deviceListModel.arraydata[selected[0].row()][0]
                     c = ClientCreator(reactor, NovacomSend, self)
                     d = c.connectTCP('localhost', port)
-                    d.addCallback(cmd_sendFile, data, str(outfile))
+                    d.addCallback(cmd_sendFile, data, str(outfile))        
+
+    def memBoot(self):
+        selected = self.deviceList.selectedIndexes()
+        if selected:
+            infile = QFileDialog.getOpenFileName(self, caption='Mem boot kernel')
+            if infile[0]:
+                f = open(str(infile[0]),'r')
+                data = f.read()
+                f.close()
+                port = self.deviceListModel.arraydata[selected[0].row()][0]
+                c = ClientCreator(reactor, NovacomSend, self)
+                d = c.connectTCP('localhost', port)
+                d.addCallback(cmd_memBoot, data)
         
     def runCommand(self):
         print 'runCommand'
