@@ -38,12 +38,12 @@ class Novacom(Protocol):
                     self.header = None
                 if self.oob and self.oob[0] == 0:
                     if self.oob[1] == 1:
-                        self._stdout(self.stdout)
+                        self.cmd_stdout(self.stdout)
                     elif self.oob[1] == 2:
-                        self._stderr(self.stderr)
+                        self.cmd_stderr(self.stderr)
                     self.oob = None
                 if self.oob and self.oob[0] == 2:
-                    self._return(self.oob[1])
+                    self.cmd_return(self.oob[1])
                     self._reset()
             else:
                 msg = self.buffer.split('\n')[0]
@@ -54,16 +54,16 @@ class Novacom(Protocol):
                     self._error(msg)
                     self._reset()
                 
-    def _return(self, ret):
+    def cmd_return(self, ret):
         pass
                 
-    def _stdout(self, data):
+    def cmd_stdout(self, data):
         sys.stdout.write(data)
         
-    def _stderr(self, data):
+    def cmd_stderr(self, data):
         sys.stderr.write(data)
     
-    def _error(self, error):
+    def error(self, error):
         print error
         
     def _reset(self):
@@ -88,18 +88,6 @@ class DeviceCollector(Protocol):
         for d in data[:-1].split('\n'):
             d = d.split(' ')
             self.devices.append((int(d[0]), d[1], d[2], d[3]))
-
-    #def connectionMade(self):
-    #    pass
-    #        
-    #def connectionLost(self, reason):
-    #    factory = Factory()
-    #    factory.protocol = Novacom
-    #    device = self.factory.devices[0]
-    #    print device
-    #    point = TCP4ClientEndpoint(reactor, 'localhost', device[0])
-    #    d = point.connect(factory)
-    #    d.addCallback(sendCommand, 'get file://etc/palm-build-info')
 
 if __name__ == '__main__':
     factory = Factory()
