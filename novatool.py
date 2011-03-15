@@ -255,11 +255,12 @@ class RunDlg(QDialog):
         self.setWindowTitle("Run Command")
         
     def run(self):
-        if self.cmd.text():
+        text = self.cmd.text()
+        if text:
             self.output.clear()
             c = ClientCreator(reactor, NovacomRun, self)
             d = c.connectTCP('localhost', self.port)
-            d.addCallback(cmd_run, str(self.cmd.text()))
+            d.addCallback(cmd_run, str(text))
         
 class MainWindow(QMainWindow):
     def __init__(self):
