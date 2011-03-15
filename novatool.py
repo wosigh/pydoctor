@@ -3,7 +3,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import qt4reactor
-import sys, tempfile, shutil, subprocess, os, platform, struct, tarfile
+import sys, tempfile, shutil, subprocess, os, platform, struct, tarfile, shlex
 from systeminfo import *
 from httpunzip import *
 
@@ -49,9 +49,13 @@ def cmd_memBoot(protocol, file):
     protocol.transport.write('boot mem://%s\n')
 
 def cmd_run(protocol, command):
+    args = shlex.split(command)
+    for i in range(0,len(args)):
+        args[i] = args[i].replace(' ','\\ ').replace('"','\\"')
+    command = ' '.join(args)
+    print command
+    protocol.transport.write('run file://%s\b' % (command))
     
-    protocol.transport.write('run file://%s\n' % (command))
-
 class NovacomGet(Novacom):
     
     file__ = None
@@ -255,12 +259,12 @@ class RunDlg(QDialog):
         self.setWindowTitle("Run Command")
         
     def run(self):
-        text = self.cmd.text()
+        text = str(self.cmd.text())
         if text:
             self.output.clear()
             c = ClientCreator(reactor, NovacomRun, self)
             d = c.connectTCP('localhost', self.port)
-            d.addCallback(cmd_run, str(text))
+            d.addCallback(cmd_run, text)
         
 class MainWindow(QMainWindow):
     def __init__(self):
