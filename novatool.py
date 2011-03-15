@@ -21,6 +21,8 @@ NOVA_WIN32  = 'resources/NovacomInstaller_x86.msi'
 NOVA_WIN64  = 'resources/NovacomInstaller_x64.msi'
 NOVA_MACOSX = 'resources/NovacomInstaller.pkg.tar.gz'
 
+REMOTE_TEMP = '/media/internal/.developer'
+
 def download_novacom_installer(platform, url, path):
     dl = None
     if platform == 'Windows':
@@ -48,13 +50,24 @@ def cmd_memBoot(protocol, file):
     protocol.file__ = file
     protocol.transport.write('boot mem://%s\n')
 
-def cmd_run(protocol, command):
-    args = shlex.split(command)
-    for i in range(0,len(args)):
-        args[i] = args[i].replace(' ','\\ ').replace('"','\\"')
-    command = ' '.join(args)
+def cmd_run(protocol, parse, command):
+    if parse:
+        print 'parse'
+        args = shlex.split(command)
+        for i in range(0,len(args)):
+            args[i] = args[i].replace(' ','\\ ').replace('"','\\"')
+        command = ' '.join(args)
+    else:
+        print 'no parse'
     print command
-    protocol.transport.write('run file://%s\b' % (command))
+    protocol.transport.write('run file://%s\n' % (command))
+    
+def cmd_installIPKG(protocol, file):
+    f = open(file,'r')
+    protocol.data__ = f.read()
+    f.close()
+    protocol.file__ = file.split('/')[-1]
+    protocol.transport.write('put file://%s/%s\n' % (REMOTE_TEMP, protocol.file__))
     
 class NovacomGet(Novacom):
     
@@ -118,26 +131,57 @@ class NovacomSend(Novacom):
             self.transport.write(struct.pack('<IIIII',2,0,0,0,0))
             self.transport.loseConnection()
             ok = True
-        if ok:
-            msgBox.setText('The file has been sent successfully.')
-        else:
-            msgBox.setText('The file fail to be sent.')
-            msgBox.setInformativeText(msg)
-        msgBox.exec_()
+            if ok:
+                msgBox.setText('The file has been sent successfully.')
+            else:
+                msgBox.setText('The file fail to be sent.')
+                msgBox.setInformativeText(msg)
+            msgBox.exec_()
         
 class NovacomRun(Novacom):
 
     def __init__(self, gui):
         self.gui = gui
-        
-    def cmd_return(self, ret):
-        pass
-    
+
     def cmd_stdout_event(self, data):
         self.gui.output.append(data)
-    
+        
     def cmd_stderr_event(self, data):
         self.gui.output.append('<font color=red>%s</font>' %(data))
+            
+
+class NovacomInstallIPKG(Novacom):
+    
+    file__ = None
+    data__ = None
+    port__ = None
+    
+    def __init__(self, gui, port):
+        self.gui = gui
+        self.port = port
+        
+    def cmd_stderr_event(self, data):
+        print data
+    
+    def cmd_status(self, msg):
+        if msg == 'ok 0' and self.port:
+            print 'upload'
+            datalen = len(self.data__)
+            written = 0
+            while written < datalen:
+                towrite = datalen - written
+                if towrite > self.PACKET_MAX:
+                    towrite = self.PACKET_MAX
+                self.transport.write(struct.pack('<IIII',self.MAGIC,1,towrite,0)+self.data__[written:written+towrite])
+                written += towrite
+            self.transport.write(struct.pack('<IIII',self.MAGIC,1,20,2))
+            self.transport.write(struct.pack('<IIIII',0,0,0,0,0))
+            self.transport.write(struct.pack('<IIII',self.MAGIC,1,20,2))
+            self.transport.write(struct.pack('<IIIII',2,0,0,0,0))
+            self.transport.loseConnection()
+            c = ClientCreator(reactor, NovacomInstallIPKG, self.gui, None)
+            d = c.connectTCP('localhost', self.port)
+            d.addCallback(cmd_run, False, '/usr/bin/luna-send -n 6 luna://com.palm.appinstaller/installNoVerify {\"subscribe\":true,\"target\":\"/media/internal/.developer/%s\",\"uncompressedSize\":0}' % (self.file__))
 
 class NovacomDebugClient(NovacomDebug):
     
@@ -264,7 +308,7 @@ class RunDlg(QDialog):
             self.output.clear()
             c = ClientCreator(reactor, NovacomRun, self)
             d = c.connectTCP('localhost', self.port)
-            d.addCallback(cmd_run, text)
+            d.addCallback(cmd_run, True, text)
         
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -429,7 +473,14 @@ class MainWindow(QMainWindow):
             dialog.show()
         
     def installIPKG(self):
-        pass
+        selected = self.deviceList.selectedIndexes()
+        if selected:
+            infile = QFileDialog.getOpenFileName(self, caption='Install IPKG')
+            if infile[0]:
+                port = self.deviceListModel.arraydata[selected[0].row()][0]
+                c = ClientCreator(reactor, NovacomInstallIPKG, self, port)
+                d = c.connectTCP('localhost', port)
+                d.addCallback(cmd_installIPKG, str(infile[0]))
         
     def closeEvent(self, event=None):
         reactor.stop()
