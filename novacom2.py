@@ -17,6 +17,10 @@ class NovacomDebug(LineReceiver):
         cmd = tmp[:i].split(':')[0]
         if cmd == 'removing' or cmd == 'dev':
             self.devicesChanged()
+        self.event_debug(line)
+        
+    def event_debug(self, msg):
+        pass
             
     def devicesChanged(self):
         pass

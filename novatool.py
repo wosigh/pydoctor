@@ -217,10 +217,11 @@ class DeviceCollectorClient(DeviceCollector):
             self.gui.deviceList.setVisible(True)
             self.gui.noDevices.setVisible(False)
             self.gui.deviceList.selectRow(0)
+            self.gui.setWidgetsEnabled(True)
         else:
             self.gui.deviceList.setVisible(False)
             self.gui.noDevices.setVisible(True)
-        
+            self.gui.setWidgetsEnabled(False)
         
 class DeviceTableModel(QAbstractTableModel): 
     
@@ -317,7 +318,7 @@ class MainWindow(QMainWindow):
         self.platform = platform.system()
         self.tempdir = path = tempfile.mkdtemp()
         
-        self.setMinimumSize(680, 280)
+        self.setFixedSize(600, 400)
         self.setWindowIcon(QIcon('novacomInstaller.ico'))
         
         screen = QDesktopWidget().screenGeometry()
@@ -325,15 +326,23 @@ class MainWindow(QMainWindow):
         self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
         
         self.novatool = QWidget(self)
-        self.hbox = QHBoxLayout()
+        self.hbox = QVBoxLayout()        
+        self.main = QHBoxLayout()
+        self.tabs = QTabWidget()
         
         self.noDevices = QLabel('<h1>No Connected Devices</h1>')
         self.noDevices.setAlignment(Qt.AlignCenter)
         self.noDevices.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.hbox.addWidget(self.noDevices)
-        self.hbox.setStretch(0,1)
+        self.noDevices.setFixedHeight(208)
+        self.noDevices.setStyleSheet('background:white; background-image: url(background.png); background-repeat:no-repeat; background-position:center center;')
+        self.main.addWidget(self.noDevices)
+        #self.main.setStretch(0,1)
         
         self.deviceList = QTableView()
+        #font = QFont()
+        #font.setBold(True)
+        #self.deviceList.setFont(font)
+        self.deviceList.setFixedHeight(208)
         self.deviceListHeader = ['Port','Device','NDUID']
         self.deviceListModel = DeviceTableModel([], self.deviceListHeader, self)
         self.deviceList.setModel(self.deviceListModel)
@@ -344,28 +353,99 @@ class MainWindow(QMainWindow):
         self.deviceList.setSelectionMode(QAbstractItemView.SingleSelection)
         self.deviceList.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.deviceList.setVisible(False)
-        self.hbox.addWidget(self.deviceList)
+        self.deviceList.setStyleSheet('background:white; background-image: url(background.png); background-repeat:no-repeat; background-position:center center;')
+        self.main.addWidget(self.deviceList)
+               
+        self.buttons = QHBoxLayout()
         
-        self.buttons = QVBoxLayout()
-        self.logo = QLabel()
-        self.logo.setPixmap(QPixmap('novacomInstaller.ico').scaled(128,128))
-        self.buttons.addWidget(self.logo)
-        self.getFileButton = QPushButton('Get File')
+        self.getFileButton = QToolButton()
+        self.getFileButton.setFixedWidth(128)
+        self.getFileButton.setIcon(QIcon('document-import.png'))
+        self.getFileButton.setText('Get File')
+        self.getFileButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.getFileButton.setIconSize(QSize(48,48))
+        self.getFileButton.setStyleSheet("padding-bottom: 8")
         QObject.connect(self.getFileButton, SIGNAL('clicked()'), self.getFile)
         self.buttons.addWidget(self.getFileButton)
-        self.sendFileButton = QPushButton('Send File')
+                
+        self.sendFileButton = QToolButton()
+        self.sendFileButton.setFixedWidth(128)
+        self.sendFileButton.setIcon(QIcon('document-export.png'))
+        self.sendFileButton.setText('Send File')
+        self.sendFileButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.sendFileButton.setIconSize(QSize(48,48))
+        self.sendFileButton.setStyleSheet("padding-bottom: 8")
         QObject.connect(self.sendFileButton, SIGNAL('clicked()'), self.sendFile)
         self.buttons.addWidget(self.sendFileButton)
-        self.memBootButton = QPushButton('Mem Boot')
+        
+        self.memBootButton = QToolButton()
+        self.memBootButton.setFixedWidth(128)
+        self.memBootButton.setIcon(QIcon('media-flash.png'))
+        self.memBootButton.setText('Mem Boot')
+        self.memBootButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.memBootButton.setIconSize(QSize(48,48))
+        self.memBootButton.setStyleSheet("padding-bottom: 8")
         QObject.connect(self.memBootButton, SIGNAL('clicked()'), self.memBoot)
         self.buttons.addWidget(self.memBootButton)
-        self.runCommandButton = QPushButton('Run Command')
+        
+        self.runCommandButton = QToolButton()
+        self.runCommandButton.setFixedWidth(128)
+        self.runCommandButton.setIcon(QIcon('application-x-executable-script.png'))
+        self.runCommandButton.setText('Run Command')
+        self.runCommandButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.runCommandButton.setIconSize(QSize(48,48))
+        self.runCommandButton.setStyleSheet("padding-bottom: 8")
         QObject.connect(self.runCommandButton, SIGNAL('clicked()'), self.runCommand)
         self.buttons.addWidget(self.runCommandButton)
-        self.installIPKGButton = QPushButton('Install IPKG')
-        QObject.connect(self.installIPKGButton, SIGNAL('clicked()'), self.installIPKG)
-        self.buttons.addWidget(self.installIPKGButton)
-        self.hbox.addLayout(self.buttons)
+        
+        self.buttonsW = QWidget()
+        self.buttonsW.setLayout(self.buttons)
+        
+        self.basicOptions = QHBoxLayout()
+        
+        self.driver = QToolButton()
+        self.driver.setFixedWidth(128)
+        self.driver.setIcon(QIcon('system-software-update.png'))
+        self.driver.setText('Novacom Driver')
+        self.driver.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.driver.setIconSize(QSize(48,48))
+        self.driver.setStyleSheet("padding-bottom: 8")
+        self.basicOptions.addWidget(self.driver)
+        
+        self.preware = QToolButton()
+        self.preware.setFixedWidth(128)
+        self.preware.setIcon(QIcon('Icon_Preware.png'))
+        self.preware.setText('Install Preware')
+        self.preware.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.preware.setIconSize(QSize(48,48))
+        self.preware.setStyleSheet("padding-bottom: 8")
+        self.basicOptions.addWidget(self.preware)
+        
+        self.ipk = QToolButton()
+        self.ipk.setFixedWidth(128)
+        self.ipk.setIcon(QIcon('Icon_Box_Arrow.png'))
+        self.ipk.setText('Install Package')
+        self.ipk.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.ipk.setIconSize(QSize(48,48))
+        self.ipk.setStyleSheet("padding-bottom: 8")
+        QObject.connect(self.ipk, SIGNAL('clicked()'), self.installIPKG)
+        
+        self.basicOptions.addWidget(self.ipk)
+        self.basics = QWidget()
+        self.basics.setLayout(self.basicOptions)
+        self.tabs.addTab(self.basics, 'Basic')
+        
+        self.tabs.addTab(self.buttonsW, 'Advanced')
+        
+        self.tabs.setMaximumHeight(150)
+        
+        self.hbox.addLayout(self.main)
+        self.hbox.addWidget(self.tabs)
+        
+        #self.logo = QLabel()
+        #self.logo.setPixmap(QPixmap('novacomInstaller.ico').scaled(128,128))
+        #self.logo.setFrameStyle(QFrame.Panel | QFrame.Raised)
+        #self.main.addWidget(self.logo)
         
         self.novatool.setLayout(self.hbox)
         self.setCentralWidget(self.novatool)
@@ -375,6 +455,7 @@ class MainWindow(QMainWindow):
         self.icon_disconneced = QPixmap('network-disconnect.png')
         self.icon_connected = QPixmap('network-connect.png')
         self.statusBar = QStatusBar()
+        self.statusBar.setSizeGripEnabled(False)
         self.statusIcon = QLabel()
         self.statusMsg = QLabel()
         self.updateStatusBar(False, None)
@@ -401,6 +482,15 @@ class MainWindow(QMainWindow):
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
+        
+    def setWidgetsEnabled(self, bool):
+        #self.driver.setEnabled(bool)
+        self.preware.setEnabled(bool)
+        self.ipk.setEnabled(bool)
+        self.getFileButton.setEnabled(bool)
+        self.sendFileButton.setEnabled(bool)
+        self.memBootButton.setEnabled(bool)
+        self.runCommandButton.setEnabled(bool)
         
     def installDriver(self):
         dl = download_novacom_installer(self.platform, jar, self.tempdir)
