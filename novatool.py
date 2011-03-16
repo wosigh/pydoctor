@@ -594,6 +594,7 @@ class MainWindow(QMainWindow):
                 d.addCallback(cmd_installIPKG, str(infile[0]))
     
     def installPreware(self):
+        print 'Install preware'
         selected = self.deviceList.selectedIndexes()
         if selected:
             port = self.deviceListModel.arraydata[selected[0].row()][0]
