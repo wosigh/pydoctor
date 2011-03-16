@@ -287,6 +287,47 @@ class DebugFactory(ReconnectingClientFactory):
         ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
         self.gui.updateStatusBar(False, 'Connection to novacomd failed!')
 
+class InstallDlg(QDialog):
+    
+    def __init__(self, port, parent=None):
+        super(InstallDlg, self).__init__(parent)
+        self.port = port
+        self.setMinimumWidth(600)
+        buttonBox = QDialogButtonBox()
+        closeButton = buttonBox.addButton(buttonBox.Cancel)
+        installButton = buttonBox.addButton(buttonBox.Ok)
+        installButton.setText('Install')
+        QObject.connect(installButton, SIGNAL('clicked()'), self.install)
+        QObject.connect(closeButton, SIGNAL('clicked()'), self.close)
+        cmdlayout = QHBoxLayout()
+        cmdLabel = QLabel('File or URL:')
+        self.cmd = QLineEdit()
+        dir = QPushButton()
+        dir.setIcon(QIcon('folder.png'))
+        QObject.connect(dir, SIGNAL('clicked()'), self.pickfile)
+        cmdlayout.addWidget(cmdLabel)
+        cmdlayout.addWidget(self.cmd)
+        cmdlayout.addWidget(dir)
+        layout = QVBoxLayout()
+        layout.addLayout(cmdlayout)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+        self.setWindowTitle("Install IPKG")
+        
+    def install(self):
+        text = str(self.cmd.text())
+        if text:
+            c = ClientCreator(reactor, NovacomInstallIPKG, self, self.port)
+            d = c.connectTCP('localhost', self.port)
+            if text[:7] == 'http://':
+                d.addCallback(cmd_installIPKG_URL, text)
+            else:
+                d.addCallback(cmd_installIPKG, text)
+        self.close()
+        
+    def pickfile(self):
+        self.cmd.setText(str(QFileDialog.getOpenFileName(self, caption='IPKG', filter='IPKG (*.ipk)')[0]))
+
 class RunDlg(QDialog):
     
     def __init__(self, port, parent=None):
@@ -586,12 +627,9 @@ class MainWindow(QMainWindow):
     def installIPKG(self):
         selected = self.deviceList.selectedIndexes()
         if selected:
-            infile = QFileDialog.getOpenFileName(self, caption='Install IPKG')
-            if infile[0]:
-                port = self.deviceListModel.arraydata[selected[0].row()][0]
-                c = ClientCreator(reactor, NovacomInstallIPKG, self, port)
-                d = c.connectTCP('localhost', port)
-                d.addCallback(cmd_installIPKG, str(infile[0]))
+            port = self.deviceListModel.arraydata[selected[0].row()][0]
+            dialog = InstallDlg(port, self)
+            dialog.show()
     
     def installPreware(self):
         print 'Install preware'
