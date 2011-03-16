@@ -3,7 +3,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import qt4reactor
-import sys, tempfile, shutil, subprocess, os, platform, struct, tarfile, shlex
+import sys, tempfile, shutil, subprocess, os, platform, struct, tarfile, shlex, urllib2
 from systeminfo import *
 from httpunzip import *
 
@@ -16,6 +16,8 @@ from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom, NovacomDebug
 
 jar = 'http://palm.cdnetworks.net/rom/pre2/p210sfr03082011/wrep210rod/webosdoctorp103ueuna-wr.jar'
+
+PREWARE = 'http://get.preware.org/org.webosinternals.preware.ipk'
        
 NOVA_WIN32  = 'resources/NovacomInstaller_x86.msi'
 NOVA_WIN64  = 'resources/NovacomInstaller_x64.msi'
@@ -67,6 +69,14 @@ def cmd_installIPKG(protocol, file):
     protocol.data__ = f.read()
     f.close()
     protocol.file__ = file.split('/')[-1]
+    protocol.transport.write('put file://%s/%s\n' % (REMOTE_TEMP, protocol.file__))
+
+def cmd_installIPKG_URL(protocol, url):
+    req = urllib2.Request(url)
+    f = urllib2.urlopen(req)
+    protocol.data__ = f.read()
+    f.close()
+    protocol.file__ = url.split('/')[-1]
     protocol.transport.write('put file://%s/%s\n' % (REMOTE_TEMP, protocol.file__))
     
 class NovacomGet(Novacom):
@@ -359,9 +369,9 @@ class MainWindow(QMainWindow):
         self.buttons = QHBoxLayout()
         
         self.getFileButton = QToolButton()
-        self.getFileButton.setFixedWidth(128)
+        self.getFileButton.setFixedWidth(96)
         self.getFileButton.setIcon(QIcon('document-import.png'))
-        self.getFileButton.setText('Get File')
+        self.getFileButton.setText('Get\nFile')
         self.getFileButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.getFileButton.setIconSize(QSize(48,48))
         self.getFileButton.setStyleSheet("padding-bottom: 8")
@@ -369,9 +379,9 @@ class MainWindow(QMainWindow):
         self.buttons.addWidget(self.getFileButton)
                 
         self.sendFileButton = QToolButton()
-        self.sendFileButton.setFixedWidth(128)
+        self.sendFileButton.setFixedWidth(96)
         self.sendFileButton.setIcon(QIcon('document-export.png'))
-        self.sendFileButton.setText('Send File')
+        self.sendFileButton.setText('Send\nFile')
         self.sendFileButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.sendFileButton.setIconSize(QSize(48,48))
         self.sendFileButton.setStyleSheet("padding-bottom: 8")
@@ -379,9 +389,9 @@ class MainWindow(QMainWindow):
         self.buttons.addWidget(self.sendFileButton)
         
         self.memBootButton = QToolButton()
-        self.memBootButton.setFixedWidth(128)
+        self.memBootButton.setFixedWidth(96)
         self.memBootButton.setIcon(QIcon('media-flash.png'))
-        self.memBootButton.setText('Mem Boot')
+        self.memBootButton.setText('Mem\nBoot')
         self.memBootButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.memBootButton.setIconSize(QSize(48,48))
         self.memBootButton.setStyleSheet("padding-bottom: 8")
@@ -389,14 +399,24 @@ class MainWindow(QMainWindow):
         self.buttons.addWidget(self.memBootButton)
         
         self.runCommandButton = QToolButton()
-        self.runCommandButton.setFixedWidth(128)
+        self.runCommandButton.setFixedWidth(96)
         self.runCommandButton.setIcon(QIcon('application-x-executable-script.png'))
-        self.runCommandButton.setText('Run Command')
+        self.runCommandButton.setText('Run\nCommand')
         self.runCommandButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.runCommandButton.setIconSize(QSize(48,48))
         self.runCommandButton.setStyleSheet("padding-bottom: 8")
         QObject.connect(self.runCommandButton, SIGNAL('clicked()'), self.runCommand)
         self.buttons.addWidget(self.runCommandButton)
+        
+        self.termButton = QToolButton()
+        self.termButton.setFixedWidth(96)
+        self.termButton.setIcon(QIcon('utilities-terminal.png'))
+        self.termButton.setText('Open\nTerminal')
+        self.termButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.termButton.setIconSize(QSize(48,48))
+        self.termButton.setStyleSheet("padding-bottom: 8")
+        #QObject.connect(self.termButton, SIGNAL('clicked()'), self.runCommand)
+        self.buttons.addWidget(self.termButton)
         
         self.buttonsW = QWidget()
         self.buttonsW.setLayout(self.buttons)
@@ -404,27 +424,28 @@ class MainWindow(QMainWindow):
         self.basicOptions = QHBoxLayout()
         
         self.driver = QToolButton()
-        self.driver.setFixedWidth(128)
+        self.driver.setFixedWidth(96)
         self.driver.setIcon(QIcon('system-software-update.png'))
-        self.driver.setText('Novacom Driver')
+        self.driver.setText('Novacom\nDriver')
         self.driver.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.driver.setIconSize(QSize(48,48))
         self.driver.setStyleSheet("padding-bottom: 8")
         self.basicOptions.addWidget(self.driver)
         
         self.preware = QToolButton()
-        self.preware.setFixedWidth(128)
+        self.preware.setFixedWidth(96)
         self.preware.setIcon(QIcon('Icon_Preware.png'))
-        self.preware.setText('Install Preware')
+        self.preware.setText('Install\nPreware')
         self.preware.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.preware.setIconSize(QSize(48,48))
         self.preware.setStyleSheet("padding-bottom: 8")
         self.basicOptions.addWidget(self.preware)
+        QObject.connect(self.preware, SIGNAL('clicked()'), self.installPreware)
         
         self.ipk = QToolButton()
-        self.ipk.setFixedWidth(128)
+        self.ipk.setFixedWidth(96)
         self.ipk.setIcon(QIcon('Icon_Box_Arrow.png'))
-        self.ipk.setText('Install Package')
+        self.ipk.setText('Install\nPackage')
         self.ipk.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.ipk.setIconSize(QSize(48,48))
         self.ipk.setStyleSheet("padding-bottom: 8")
@@ -571,7 +592,15 @@ class MainWindow(QMainWindow):
                 c = ClientCreator(reactor, NovacomInstallIPKG, self, port)
                 d = c.connectTCP('localhost', port)
                 d.addCallback(cmd_installIPKG, str(infile[0]))
-        
+    
+    def installPreware(self):
+        selected = self.deviceList.selectedIndexes()
+        if selected:
+            port = self.deviceListModel.arraydata[selected[0].row()][0]
+            c = ClientCreator(reactor, NovacomInstallIPKG, self, port)
+            d = c.connectTCP('localhost', port)
+            d.addCallback(cmd_installIPKG_URL, PREWARE)
+            
     def closeEvent(self, event=None):
         reactor.stop()
         
