@@ -15,6 +15,12 @@ from twisted.internet.protocol import ClientCreator, ReconnectingClientFactory
 from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom, NovacomDebug
 
+DEVICE_ICONS = {
+                'castle-linux':'icons/devices/Icon_Device_Pre1_64.png',
+                'roadrunner-linux':'icons/devices/Icon_Device_Pre2_64.png',
+                'pixie-linux':'icons/devices/Icon_Device_Pixi1_64.png'
+                }
+
 jar = 'http://palm.cdnetworks.net/rom/pre2/p210sfr03082011/wrep210rod/webosdoctorp103ueuna-wr.jar'
 
 PREWARE = 'http://get.preware.org/org.webosinternals.preware.ipk'
@@ -217,21 +223,34 @@ class DeviceCollectorClient(DeviceCollector):
         self.gui = gui
         
     def connectionLost(self, reason):
-        info = []
-        for device in self.devices:
-            info.append([device[0],device[3],device[1]])
-        self.gui.deviceListModel = DeviceTableModel(info, self.gui.deviceListHeader, self.gui)
-        self.gui.deviceList.setModel(self.gui.deviceListModel)
-        self.gui.deviceList.resizeColumnsToContents()
-        if info:
-            self.gui.deviceList.setVisible(True)
-            self.gui.noDevices.setVisible(False)
-            self.gui.deviceList.selectRow(0)
-            self.gui.setWidgetsEnabled(True)
-        else:
-            self.gui.deviceList.setVisible(False)
-            self.gui.noDevices.setVisible(True)
-            self.gui.setWidgetsEnabled(False)
+        self.gui.devices = self.devices        
+        ndev = len(self.devices)
+        for device in self.gui.deviceButtons:
+            device.hide()
+            self.gui.deviceBoxLayout.removeWidget(device)
+            del device
+        self.gui.deviceButtons = [None] * ndev
+        
+        activeDevice = self.gui.activeDevice
+                      
+        noActive = True
+        for i in range(0,ndev):
+            self.gui.deviceButtons[i] = QToolButton()
+            self.gui.deviceButtons[i].setFixedSize(128,128)
+            self.gui.deviceButtons[i].setText(self.devices[i][3])
+            self.gui.deviceButtons[i].setIconSize(QSize(64,64))
+            self.gui.deviceButtons[i].setStyleSheet("margin-top: 18")
+            self.gui.deviceButtons[i].setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            self.gui.deviceButtons[i].setIcon(QIcon(DEVICE_ICONS[self.devices[i][3]]))
+            self.gui.deviceButtons[i].setCheckable(True)
+            if activeDevice == self.devices[i][1]:
+                self.gui.deviceButtons[i].setChecked(True)
+                noActive = False
+            QObject.connect(self.gui.deviceButtons[i], SIGNAL('clicked()'), (lambda x=i : self.gui.setActiveDevice(x)))
+            self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[i])
+            
+        if noActive:
+            self.gui.activeDevice = None
         
 class DeviceTableModel(QAbstractTableModel): 
     
@@ -369,6 +388,11 @@ class MainWindow(QMainWindow):
         self.platform = platform.system()
         self.tempdir = path = tempfile.mkdtemp()
         
+        self.devices = []
+        self.activeDevice = None
+        
+        self.deviceButtons = []
+        
         self.setFixedSize(600, 400)
         self.setWindowIcon(QIcon('novacomInstaller.ico'))
         
@@ -386,8 +410,12 @@ class MainWindow(QMainWindow):
         self.noDevices.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.noDevices.setFixedHeight(208)
         self.noDevices.setStyleSheet('background:white; background-image: url(background.png); background-repeat:no-repeat; background-position:center center;')
-        self.main.addWidget(self.noDevices)
+        #self.main.addWidget(self.noDevices)
         #self.main.setStretch(0,1)
+        
+        self.deviceBox = QGroupBox('Devices')
+        self.deviceBoxLayout = QHBoxLayout()
+        self.deviceBox.setLayout(self.deviceBoxLayout)
         
         self.deviceList = QTableView()
         #font = QFont()
@@ -405,7 +433,7 @@ class MainWindow(QMainWindow):
         self.deviceList.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.deviceList.setVisible(False)
         self.deviceList.setStyleSheet('background:white; background-image: url(background.png); background-repeat:no-repeat; background-position:center center;')
-        self.main.addWidget(self.deviceList)
+        #self.main.addWidget(self.deviceList)
                
         self.buttons = QHBoxLayout()
         
@@ -495,13 +523,14 @@ class MainWindow(QMainWindow):
         self.basicOptions.addWidget(self.ipk)
         self.basics = QWidget()
         self.basics.setLayout(self.basicOptions)
-        self.tabs.addTab(self.basics, 'Basic')
+        self.tabs.addTab(self.basics, 'Installers')
         
         self.tabs.addTab(self.buttonsW, 'Advanced')
         
         self.tabs.setMaximumHeight(150)
         
-        self.hbox.addLayout(self.main)
+        self.hbox.addWidget(self.deviceBox)
+        self.hbox.setStretch(0,1)
         self.hbox.addWidget(self.tabs)
         
         #self.logo = QLabel()
@@ -544,6 +573,14 @@ class MainWindow(QMainWindow):
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
+        
+    def setActiveDevice(self, index):
+        for i in range(0,len(self.deviceButtons)):
+            if i == index:
+                self.activeDevice = self.devices[i][1]
+                self.deviceButtons[i].setChecked(True)
+            else:
+                self.deviceButtons[i].setChecked(False)
         
     def setWidgetsEnabled(self, bool):
         #self.driver.setEnabled(bool)
