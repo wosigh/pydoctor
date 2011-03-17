@@ -16,9 +16,9 @@ from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom, NovacomDebug
 
 DEVICE_ICONS = {
-                'castle-linux':'icons/devices/Icon_Device_Pre1_64.png',
-                'roadrunner-linux':'icons/devices/Icon_Device_Pre2_64.png',
-                'pixie-linux':'icons/devices/Icon_Device_Pixi1_64.png'
+                'castle-linux':'icons/devices/Icon_Device_Pre1_128.png',
+                'roadrunner-linux':'icons/devices/Icon_Device_Pre2_128.png',
+                'pixie-linux':'icons/devices/Icon_Device_Pixi1_128.png'
                 }
 
 jar = 'http://palm.cdnetworks.net/rom/pre2/p210sfr03082011/wrep210rod/webosdoctorp103ueuna-wr.jar'
@@ -210,12 +210,29 @@ class NovacomDebugClient(NovacomDebug):
 
     def connectionLost(self, reason):
         self.gui.updateStatusBar(False, 'Connection to novacomd lost.')
-        self.gui.deviceListModel = DeviceTableModel([], self.gui.deviceListHeader, self.gui)
-        self.gui.deviceList.setModel(self.gui.deviceListModel)
-        self.gui.deviceList.horizontalHeader().setVisible(False)
+        for device in self.gui.deviceButtons:
+            device.hide()
+            self.gui.deviceBoxLayout.removeWidget(device)
+            del device
+            
+        self.gui.activeDevice = None
+        b = QLabel('<h2>No Connected Devices</h2>')
+        b.setAlignment(Qt.AlignCenter)
+        self.gui.deviceButtons = [b]
+        self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[0])
+
         
     def devicesChanged(self):
         ClientCreator(reactor, DeviceCollectorClient, self.gui).connectTCP('localhost', 6968)
+
+class mousepressEvent(QObject):
+    def __init__(self, parent):
+        super(mousepressEvent, self).__init__(parent)
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.MouseButtonPress:
+            object.setReadOnly(False)
+            return True
+        return False
         
 class DeviceCollectorClient(DeviceCollector):
     
@@ -229,59 +246,44 @@ class DeviceCollectorClient(DeviceCollector):
             device.hide()
             self.gui.deviceBoxLayout.removeWidget(device)
             del device
-        self.gui.deviceButtons = [None] * ndev
-        
-        activeDevice = self.gui.activeDevice
-                      
-        noActive = True
-        for i in range(0,ndev):
-            self.gui.deviceButtons[i] = QToolButton()
-            self.gui.deviceButtons[i].setFixedSize(128,128)
-            self.gui.deviceButtons[i].setText(self.devices[i][3])
-            self.gui.deviceButtons[i].setIconSize(QSize(64,64))
-            self.gui.deviceButtons[i].setStyleSheet("margin-top: 18")
-            self.gui.deviceButtons[i].setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-            self.gui.deviceButtons[i].setIcon(QIcon(DEVICE_ICONS[self.devices[i][3]]))
-            self.gui.deviceButtons[i].setCheckable(True)
-            if activeDevice == self.devices[i][1]:
-                self.gui.deviceButtons[i].setChecked(True)
-                noActive = False
-            QObject.connect(self.gui.deviceButtons[i], SIGNAL('clicked()'), (lambda x=i : self.gui.setActiveDevice(x)))
-            self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[i])
             
-        if noActive:
-            self.gui.activeDevice = None
-        
-class DeviceTableModel(QAbstractTableModel): 
-    
-    def __init__(self, datain, headerdata, parent=None, *args): 
-        QAbstractTableModel.__init__(self, parent, *args) 
-        self.arraydata = datain
-        self.headerdata = headerdata
-    
-    def rowCount(self, parent):
-        if self.arraydata:
-            return len(self.arraydata)
+        if not ndev and self.gui.activeDevice == None:
+            self.gui.deviceButtons = [QLabel('<h2>No Connected Devices</h2>')]
+            self.gui.deviceButtons[0].setAlignment(Qt.AlignCenter)
+            self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[0])
         else:
-            return 0
-    
-    def columnCount(self, parent):
-        if self.arraydata:
-            return len(self.arraydata[0])
-        else:
-            return 0 
-    
-    def data(self, index, role): 
-        if not index.isValid(): 
-            return None
-        elif role != Qt.DisplayRole: 
-            return None
-        return self.arraydata[index.row()][index.column()] 
-    
-    def headerData(self, col, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.headerdata[col]
-        return None
+            self.gui.deviceButtons = [None] * ndev 
+            for i in range(0,ndev):
+                self.gui.deviceButtons[i] = QFrame()
+                self.gui.deviceButtons[i].setFrameStyle(QFrame.Box | QFrame.Plain)
+                self.gui.deviceButtons[i].setFixedSize(196,196)
+                layout = QVBoxLayout()
+                icon = QLabel()
+                icon.setPixmap(QPixmap(DEVICE_ICONS[self.devices[i][3]]))
+                icon.setAlignment(Qt.AlignCenter)
+                layout.addWidget(icon)
+                #self.gui.deviceButtons[i].setIconSize(QSize(128,128))
+                #self.gui.deviceButtons[i].setStyleSheet("margin-top: 18")
+                #self.gui.deviceButtons[i].setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+                #self.gui.deviceButtons[i].setIcon()
+                #self.gui.deviceButtons[i].setCheckable(True)
+                label = QLineEdit(self.devices[i][3])
+                label.installEventFilter(mousepressEvent(self.gui))
+                label.setReadOnly(True)
+                label.setStyleSheet('background: transparent;')
+                label.setFrame(False)
+                label.setAlignment(Qt.AlignCenter)
+                QObject.connect(label, SIGNAL('returnPressed()'), (lambda x=label : self.editLabel(x)))
+                layout.addWidget(label)
+                #if self.gui.activeDevice == self.devices[i][1]:
+                #    self.gui.deviceButtons[i].setChecked(True)
+                #    noActive = False
+                #QObject.connect(self.gui.deviceButtons[i], SIGNAL('clicked()'), (lambda x=i : self.gui.setActiveDevice(x)))
+                self.gui.deviceButtons[i].setLayout(layout)
+                self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[i])
+
+    def editLabel(self, label):
+        label.setReadOnly(True)
 
 class DebugFactory(ReconnectingClientFactory):
     
@@ -352,7 +354,6 @@ class RunDlg(QDialog):
     def __init__(self, port, parent=None):
         super(RunDlg, self).__init__(parent)
         self.port = port
-        self.setMinimumSize(680, 280)
         buttonBox = QDialogButtonBox()
         closeButton = buttonBox.addButton(buttonBox.Close)
         QObject.connect(closeButton, SIGNAL('clicked()'), self.close)
@@ -393,7 +394,6 @@ class MainWindow(QMainWindow):
         
         self.deviceButtons = []
         
-        self.setFixedSize(600, 400)
         self.setWindowIcon(QIcon('novacomInstaller.ico'))
         
         screen = QDesktopWidget().screenGeometry()
@@ -405,36 +405,10 @@ class MainWindow(QMainWindow):
         self.main = QHBoxLayout()
         self.tabs = QTabWidget()
         
-        self.noDevices = QLabel('<h1>No Connected Devices</h1>')
-        self.noDevices.setAlignment(Qt.AlignCenter)
-        self.noDevices.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.noDevices.setFixedHeight(208)
-        self.noDevices.setStyleSheet('background:white; background-image: url(background.png); background-repeat:no-repeat; background-position:center center;')
-        #self.main.addWidget(self.noDevices)
-        #self.main.setStretch(0,1)
-        
         self.deviceBox = QGroupBox('Devices')
         self.deviceBoxLayout = QHBoxLayout()
         self.deviceBox.setLayout(self.deviceBoxLayout)
-        
-        self.deviceList = QTableView()
-        #font = QFont()
-        #font.setBold(True)
-        #self.deviceList.setFont(font)
-        self.deviceList.setFixedHeight(208)
-        self.deviceListHeader = ['Port','Device','NDUID']
-        self.deviceListModel = DeviceTableModel([], self.deviceListHeader, self)
-        self.deviceList.setModel(self.deviceListModel)
-        self.deviceList.setShowGrid(False)
-        self.deviceList.verticalHeader().setVisible(False)
-        self.deviceList.horizontalHeader().setStretchLastSection(True)
-        self.deviceList.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.deviceList.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.deviceList.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.deviceList.setVisible(False)
-        self.deviceList.setStyleSheet('background:white; background-image: url(background.png); background-repeat:no-repeat; background-position:center center;')
-        #self.main.addWidget(self.deviceList)
-               
+                       
         self.buttons = QHBoxLayout()
         
         self.getFileButton = QToolButton()
