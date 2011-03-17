@@ -21,7 +21,7 @@ import resources
 DEVICE_ICONS = {
                 'castle-linux':':/icons/devices/Icon_Device_Pre1_128.png',
                 'roadrunner-linux':':/icons/devices/Icon_Device_Pre2_128.png',
-                'pixie-linux':':/icons/devices/Icon_Device_Pixi1_128.png'
+                'pixie-linux':':/icons/devices/Icon_Device_Pixi1_128.png',
                 }
 
 jar = 'http://palm.cdnetworks.net/rom/pre2/p210sfr03082011/wrep210rod/webosdoctorp103ueuna-wr.jar'
@@ -356,7 +356,7 @@ class InstallDlg(QDialog):
         cmdLabel = QLabel('File or URL:')
         self.cmd = QLineEdit()
         dir = QPushButton()
-        dir.setIcon(QIcon('folder.png'))
+        dir.setIcon(QIcon(':/icons/buttons/folder.png'))
         QObject.connect(dir, SIGNAL('clicked()'), self.pickfile)
         cmdlayout.addWidget(cmdLabel)
         cmdlayout.addWidget(self.cmd)
@@ -450,7 +450,7 @@ class MainWindow(QMainWindow):
         
         self.getFileButton = QToolButton()
         self.getFileButton.setFixedWidth(96)
-        self.getFileButton.setIcon(QIcon('document-import.png'))
+        self.getFileButton.setIcon(QIcon(':/icons/buttons/document-import.png'))
         self.getFileButton.setText('Get\nFile')
         self.getFileButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.getFileButton.setIconSize(QSize(48,48))
@@ -460,7 +460,7 @@ class MainWindow(QMainWindow):
                 
         self.sendFileButton = QToolButton()
         self.sendFileButton.setFixedWidth(96)
-        self.sendFileButton.setIcon(QIcon('document-export.png'))
+        self.sendFileButton.setIcon(QIcon(':/icons/buttons/document-export.png'))
         self.sendFileButton.setText('Send\nFile')
         self.sendFileButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.sendFileButton.setIconSize(QSize(48,48))
@@ -470,7 +470,7 @@ class MainWindow(QMainWindow):
         
         self.memBootButton = QToolButton()
         self.memBootButton.setFixedWidth(96)
-        self.memBootButton.setIcon(QIcon('media-flash.png'))
+        self.memBootButton.setIcon(QIcon(':/icons/buttons/media-flash.png'))
         self.memBootButton.setText('Mem\nBoot')
         self.memBootButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.memBootButton.setIconSize(QSize(48,48))
@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
         
         self.runCommandButton = QToolButton()
         self.runCommandButton.setFixedWidth(96)
-        self.runCommandButton.setIcon(QIcon('application-x-executable-script.png'))
+        self.runCommandButton.setIcon(QIcon(':/icons/buttons/application-x-executable-script.png'))
         self.runCommandButton.setText('Run\nCommand')
         self.runCommandButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.runCommandButton.setIconSize(QSize(48,48))
@@ -490,7 +490,7 @@ class MainWindow(QMainWindow):
         
         self.termButton = QToolButton()
         self.termButton.setFixedWidth(96)
-        self.termButton.setIcon(QIcon('utilities-terminal.png'))
+        self.termButton.setIcon(QIcon(':/icons/buttons/utilities-terminal.png'))
         self.termButton.setText('Open\nTerminal')
         self.termButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.termButton.setIconSize(QSize(48,48))
@@ -505,7 +505,7 @@ class MainWindow(QMainWindow):
         
         self.driver = QToolButton()
         self.driver.setFixedWidth(96)
-        self.driver.setIcon(QIcon('system-software-update.png'))
+        self.driver.setIcon(QIcon(':/icons/buttons/system-software-update.png'))
         self.driver.setText('Novacom\nDriver')
         self.driver.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.driver.setIconSize(QSize(48,48))
@@ -515,7 +515,7 @@ class MainWindow(QMainWindow):
         
         self.preware = QToolButton()
         self.preware.setFixedWidth(96)
-        self.preware.setIcon(QIcon('Icon_Preware.png'))
+        self.preware.setIcon(QIcon(':/icons/buttons/Icon_Preware.png'))
         self.preware.setText('Install\nPreware')
         self.preware.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.preware.setIconSize(QSize(48,48))
@@ -525,7 +525,7 @@ class MainWindow(QMainWindow):
         
         self.ipk = QToolButton()
         self.ipk.setFixedWidth(96)
-        self.ipk.setIcon(QIcon('Icon_Box_Arrow.png'))
+        self.ipk.setIcon(QIcon(':/icons/buttons/Icon_Box_Arrow.png'))
         self.ipk.setText('Install\nPackage')
         self.ipk.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.ipk.setIconSize(QSize(48,48))
@@ -550,8 +550,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Novatool 1.0')
         self.setUnifiedTitleAndToolBarOnMac(True)
         
-        self.icon_disconneced = QPixmap('network-disconnect.png')
-        self.icon_connected = QPixmap('network-connect.png')
+        self.icon_disconneced = QPixmap(':/icons/buttons/network-disconnect.png')
+        self.icon_connected = QPixmap(':/icons/buttons/network-connect.png')
         self.statusBar = QStatusBar()
         self.statusBar.setSizeGripEnabled(False)
         self.statusIcon = QLabel()

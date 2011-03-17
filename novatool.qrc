@@ -3,5 +3,16 @@
     <file>icons/devices/Icon_Device_Pre1_128.png</file>
     <file>icons/devices/Icon_Device_Pre2_128.png</file>
     <file>icons/devices/Icon_Device_Pixi1_128.png</file>
+    <file>icons/buttons/Icon_Box_Arrow.png</file>
+	<file>icons/buttons/Icon_Preware.png</file>
+	<file>icons/buttons/application-x-executable-script.png</file>
+	<file>icons/buttons/document-export.png</file>
+	<file>icons/buttons/document-import.png</file>
+	<file>icons/buttons/folder.png</file>
+	<file>icons/buttons/media-flash.png</file>
+	<file>icons/buttons/network-connect.png</file>
+	<file>icons/buttons/network-disconnect.png</file>
+	<file>icons/buttons/system-software-update.png</file>
+	<file>icons/buttons/utilities-terminal.png</file>
 </qresource>
 </RCC>
