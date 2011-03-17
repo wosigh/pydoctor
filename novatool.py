@@ -233,11 +233,12 @@ class deviceEvent(QObject):
         self.gui = parent
     def eventFilter(self, object, event):
         if event.type() == QEvent.MouseButtonPress:
-            print self.gui
-            if object.frameStyle() == QFrame.Panel | QFrame.Sunken:
-                object.setFrameStyle(QFrame.Panel | QFrame.Raised)
-            else:
-                object.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+            for i in range(0, len(self.gui.deviceButtons)):
+                if self.gui.deviceButtons[i] == object:
+                    self.gui.deviceButtons[i].setFrameStyle(QFrame.Panel | QFrame.Sunken)
+                    self.gui.activeDevice = self.gui.devices[i][1]
+                else:
+                    self.gui.deviceButtons[i].setFrameStyle(QFrame.Panel | QFrame.Raised)
             return True
         return False
 
@@ -262,18 +263,19 @@ class DeviceCollectorClient(DeviceCollector):
             device.hide()
             self.gui.deviceBoxLayout.removeWidget(device)
             del device
-            
-        if not ndev and self.gui.activeDevice == None:
-            self.gui.deviceButtons = [QLabel('<h2>No Connected Devices</h2>')]
-            self.gui.deviceButtons[0].setAlignment(Qt.AlignCenter)
-            self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[0])
-        else:
+        
+        noActive = True
+        if ndev > 0:
             self.gui.deviceButtons = [None] * ndev 
             for i in range(0,ndev):
                 self.gui.deviceButtons[i] = QFrame()
                 self.gui.deviceButtons[i].setLineWidth(4)
                 self.gui.deviceButtons[i].installEventFilter(deviceEvent(self.gui))
-                self.gui.deviceButtons[i].setFrameStyle(QFrame.Panel | QFrame.Raised)
+                if self.devices[i][1] == self.gui.activeDevice:
+                    noActive = False
+                    self.gui.deviceButtons[i].setFrameStyle(QFrame.Panel | QFrame.Sunken)
+                else:
+                    self.gui.deviceButtons[i].setFrameStyle(QFrame.Panel | QFrame.Raised)
                 self.gui.deviceButtons[i].setFixedSize(196,196)
                 layout = QVBoxLayout()
                 icon = QLabel()
@@ -295,10 +297,17 @@ class DeviceCollectorClient(DeviceCollector):
                 layout.addWidget(label)
                 self.gui.deviceButtons[i].setLayout(layout)
                 self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[i])
+            if noActive:
+                self.gui.activeDevice = self.devices[0][1]
+                self.gui.deviceButtons[0].setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        else:
+            self.gui.activeDevice = None
+            self.gui.deviceButtons = [QLabel('<h2>No Connected Devices</h2>')]
+            self.gui.deviceButtons[0].setAlignment(Qt.AlignCenter)
+            self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[0])
 
     def editLabel(self, label):
         label.setReadOnly(True)
-        print (label.text(),self.gui.devices[label.devid][3])
         if label.text() == self.gui.devices[label.devid][3]:
             if self.gui.config['device_aliases'][self.gui.devices[label.devid][1]]:
                 del self.gui.config['device_aliases'][self.gui.devices[label.devid][1]]
@@ -571,14 +580,6 @@ class MainWindow(QMainWindow):
 
     def save_config(self):
         save_config(self.config_file, self.config)
-        
-    def setActiveDevice(self, index):
-        for i in range(0,len(self.deviceButtons)):
-            if i == index:
-                self.activeDevice = self.devices[i][1]
-                self.deviceButtons[i].setChecked(True)
-            else:
-                self.deviceButtons[i].setChecked(False)
         
     def setWidgetsEnabled(self, bool):
         self.preware.setEnabled(bool)
