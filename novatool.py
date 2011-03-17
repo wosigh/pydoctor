@@ -304,6 +304,7 @@ class DeviceCollectorClient(DeviceCollector):
                 del self.gui.config['device_aliases'][self.gui.devices[label.devid][1]]
         else:
             self.gui.config['device_aliases'][self.gui.devices[label.devid][1]] = label.text()
+        self.gui.save_config()
 
 class DebugFactory(ReconnectingClientFactory):
     
