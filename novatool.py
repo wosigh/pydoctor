@@ -574,6 +574,11 @@ class MainWindow(QMainWindow):
         self.aboutmenu.addAction('About')
         self.menuBar.addMenu(self.aboutmenu)
         self.setMenuBar(self.menuBar)
+        
+        b = QLabel('<h2>No Connected Devices</h2>')
+        b.setAlignment(Qt.AlignCenter)
+        self.deviceButtons = [b]
+        self.deviceBoxLayout.addWidget(self.gui.deviceButtons[0])
                         
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
