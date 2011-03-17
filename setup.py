@@ -5,7 +5,8 @@ py2exe_options = dict(
     ascii = True,
     excludes = ['_ssl','pyexpat','bz2'],
     bundle_files = True,
-    compressed = True
+    compressed = True,
+    dll_excludes = ['MSVCP90.dll']
 )
 
 setup(
