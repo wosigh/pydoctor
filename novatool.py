@@ -16,10 +16,12 @@ from twisted.internet.protocol import ClientCreator, ReconnectingClientFactory
 from twisted.internet.error import ConnectionRefusedError
 from novacom2 import DeviceCollector, Novacom, NovacomDebug
 
+import resources
+
 DEVICE_ICONS = {
-                'castle-linux':'icons/devices/Icon_Device_Pre1_128.png',
-                'roadrunner-linux':'icons/devices/Icon_Device_Pre2_128.png',
-                'pixie-linux':'icons/devices/Icon_Device_Pixi1_128.png'
+                'castle-linux':':/icons/devices/Icon_Device_Pre1_128.png',
+                'roadrunner-linux':':/icons/devices/Icon_Device_Pre2_128.png',
+                'pixie-linux':':/icons/devices/Icon_Device_Pixi1_128.png'
                 }
 
 jar = 'http://palm.cdnetworks.net/rom/pre2/p210sfr03082011/wrep210rod/webosdoctorp103ueuna-wr.jar'

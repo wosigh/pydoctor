@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>icons/devices/Icon_Device_Pre1_128.png</file>
+    <file>icons/devices/Icon_Device_Pre2_128.png</file>
+    <file>icons/devices/Icon_Device_Pixi1_128.png</file>
+</qresource>
+</RCC>
