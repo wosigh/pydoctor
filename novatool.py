@@ -6,6 +6,7 @@ import qt4reactor
 import sys, tempfile, shutil, subprocess, os, platform, struct, tarfile, shlex, urllib2
 from systeminfo import *
 from httpunzip import *
+from config import *
 
 app = QApplication(sys.argv)
 qt4reactor.install()
@@ -262,12 +263,12 @@ class DeviceCollectorClient(DeviceCollector):
                 icon.setPixmap(QPixmap(DEVICE_ICONS[self.devices[i][3]]))
                 icon.setAlignment(Qt.AlignCenter)
                 layout.addWidget(icon)
-                #self.gui.deviceButtons[i].setIconSize(QSize(128,128))
-                #self.gui.deviceButtons[i].setStyleSheet("margin-top: 18")
-                #self.gui.deviceButtons[i].setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-                #self.gui.deviceButtons[i].setIcon()
-                #self.gui.deviceButtons[i].setCheckable(True)
-                label = QLineEdit(self.devices[i][3])
+                label = QLineEdit()
+                if self.gui.config['device_aliases'][self.devices[i][1]]:
+                    label.setText(self.gui.config['device_aliases'][self.devices[i][1]])
+                else:
+                    label.setText(self.devices[i][3])
+                label.devid = i
                 label.installEventFilter(mousepressEvent(self.gui))
                 label.setReadOnly(True)
                 label.setStyleSheet('background: transparent;')
@@ -275,15 +276,17 @@ class DeviceCollectorClient(DeviceCollector):
                 label.setAlignment(Qt.AlignCenter)
                 QObject.connect(label, SIGNAL('returnPressed()'), (lambda x=label : self.editLabel(x)))
                 layout.addWidget(label)
-                #if self.gui.activeDevice == self.devices[i][1]:
-                #    self.gui.deviceButtons[i].setChecked(True)
-                #    noActive = False
-                #QObject.connect(self.gui.deviceButtons[i], SIGNAL('clicked()'), (lambda x=i : self.gui.setActiveDevice(x)))
                 self.gui.deviceButtons[i].setLayout(layout)
                 self.gui.deviceBoxLayout.addWidget(self.gui.deviceButtons[i])
 
     def editLabel(self, label):
         label.setReadOnly(True)
+        print (label.text(),self.gui.devices[label.devid][3])
+        if label.text() == self.gui.devices[label.devid][3]:
+            if self.gui.config['device_aliases'][self.gui.devices[label.devid][1]]:
+                del self.gui.config['device_aliases'][self.gui.devices[label.devid][1]]
+        else:
+            self.gui.config['device_aliases'][self.gui.devices[label.devid][1]] = label.text()
 
 class DebugFactory(ReconnectingClientFactory):
     
@@ -383,11 +386,14 @@ class RunDlg(QDialog):
             d.addCallback(cmd_run, True, text)
         
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, config_file, config, platform, tempdir):
         super(MainWindow, self).__init__()
         
-        self.platform = platform.system()
-        self.tempdir = path = tempfile.mkdtemp()
+        self.config_file = config_file
+        self.config = config
+        
+        self.platform = platform
+        self.tempdir = tempdir
         
         self.devices = []
         self.activeDevice = None
@@ -506,12 +512,7 @@ class MainWindow(QMainWindow):
         self.hbox.addWidget(self.deviceBox)
         self.hbox.setStretch(0,1)
         self.hbox.addWidget(self.tabs)
-        
-        #self.logo = QLabel()
-        #self.logo.setPixmap(QPixmap('novacomInstaller.ico').scaled(128,128))
-        #self.logo.setFrameStyle(QFrame.Panel | QFrame.Raised)
-        #self.main.addWidget(self.logo)
-        
+                
         self.novatool.setLayout(self.hbox)
         self.setCentralWidget(self.novatool)
         self.setWindowTitle('Novatool 1.0')
@@ -547,6 +548,9 @@ class MainWindow(QMainWindow):
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
+
+    def save_config(self):
+        save_config(self.config_file, self.config)
         
     def setActiveDevice(self, index):
         for i in range(0,len(self.deviceButtons)):
@@ -557,7 +561,6 @@ class MainWindow(QMainWindow):
                 self.deviceButtons[i].setChecked(False)
         
     def setWidgetsEnabled(self, bool):
-        #self.driver.setEnabled(bool)
         self.preware.setEnabled(bool)
         self.ipk.setEnabled(bool)
         self.getFileButton.setEnabled(bool)
@@ -655,7 +658,24 @@ class MainWindow(QMainWindow):
         reactor.stop()
         
 if __name__ == '__main__':
-    mainWin = MainWindow()
+    
+    platform = platform.system()
+    tempdir = path = tempfile.mkdtemp()
+    
+    if platform == 'Windows':
+        appdata = os.environ['APPDATA']
+    else:
+        _home = os.environ.get('HOME', '/')
+        appdata = os.environ.get('XDG_CONFIG_HOME', os.path.join(_home, '.config'))
+    novatool_config_home = os.path.join(appdata, 'novatool')    
+    if not os.path.exists(novatool_config_home):
+        os.mkdir(novatool_config_home)        
+    config_file = os.path.join(novatool_config_home,"config")
+    config = load_config(config_file)
+    
+    mainWin = MainWindow(config_file, config, platform, tempdir)
     ret = reactor.run()
     shutil.rmtree(mainWin.tempdir)
+    
+    save_config(config_file, config)
     sys.exit(ret)
