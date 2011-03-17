@@ -301,7 +301,9 @@ class DeviceCollectorClient(DeviceCollector):
             if noActive:
                 self.gui.activeDevice = self.devices[0][1]
                 self.gui.deviceButtons[0].setFrameStyle(QFrame.Panel | QFrame.Sunken)
+            self.gui.setWidgetsEnabled(True)
         else:
+            self.gui.setWidgetsEnabled(False)
             self.gui.activeDevice = None
             self.gui.deviceButtons = [QLabel('<h2>No Connected Devices</h2>')]
             self.gui.deviceButtons[0].setAlignment(Qt.AlignCenter)
@@ -494,6 +496,7 @@ class MainWindow(QMainWindow):
         self.termButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.termButton.setIconSize(QSize(48,48))
         self.termButton.setStyleSheet("padding-bottom: 8")
+        self.termButton.setEnabled(False)
         #QObject.connect(self.termButton, SIGNAL('clicked()'), self.runCommand)
         self.buttons.addWidget(self.termButton)
         
@@ -580,6 +583,7 @@ class MainWindow(QMainWindow):
         b.setAlignment(Qt.AlignCenter)
         self.deviceButtons = [b]
         self.deviceBoxLayout.addWidget(self.deviceButtons[0])
+        self.setWidgetsEnabled(False)
                         
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
