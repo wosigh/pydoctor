@@ -281,7 +281,7 @@ class DeviceCollectorClient(DeviceCollector):
                 icon.setAlignment(Qt.AlignCenter)
                 layout.addWidget(icon)
                 label = QLineEdit()
-                if self.gui.config['device_aliases'] and self.gui.config['device_aliases'][self.devices[i][1]]:
+                if self.gui.config['device_aliases'].has_key(self.devices[i][1]):
                     label.setText(self.gui.config['device_aliases'][self.devices[i][1]])
                 else:
                     label.setText(self.devices[i][3])
