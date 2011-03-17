@@ -204,6 +204,7 @@ class NovacomDebugClient(NovacomDebug):
     
     def __init__(self, gui):
         self.gui = gui
+        self.gui.debugProto = self
         
     def connectionMade(self):
         self.gui.updateStatusBar(True, 'Connected to novacomd.')
@@ -226,9 +227,23 @@ class NovacomDebugClient(NovacomDebug):
     def devicesChanged(self):
         ClientCreator(reactor, DeviceCollectorClient, self.gui).connectTCP('localhost', 6968)
 
-class mousepressEvent(QObject):
+class deviceEvent(QObject):
     def __init__(self, parent):
-        super(mousepressEvent, self).__init__(parent)
+        super(deviceEvent, self).__init__(parent)
+        self.gui = parent
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.MouseButtonPress:
+            print self.gui
+            if object.frameStyle() == QFrame.Panel | QFrame.Sunken:
+                object.setFrameStyle(QFrame.Panel | QFrame.Raised)
+            else:
+                object.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+            return True
+        return False
+
+class deviceLabelEvent(QObject):
+    def __init__(self, parent):
+        super(deviceLabelEvent, self).__init__(parent)
     def eventFilter(self, object, event):
         if event.type() == QEvent.MouseButtonPress:
             object.setReadOnly(False)
@@ -256,7 +271,9 @@ class DeviceCollectorClient(DeviceCollector):
             self.gui.deviceButtons = [None] * ndev 
             for i in range(0,ndev):
                 self.gui.deviceButtons[i] = QFrame()
-                self.gui.deviceButtons[i].setFrameStyle(QFrame.Box | QFrame.Plain)
+                self.gui.deviceButtons[i].setLineWidth(4)
+                self.gui.deviceButtons[i].installEventFilter(deviceEvent(self.gui))
+                self.gui.deviceButtons[i].setFrameStyle(QFrame.Panel | QFrame.Raised)
                 self.gui.deviceButtons[i].setFixedSize(196,196)
                 layout = QVBoxLayout()
                 icon = QLabel()
@@ -269,7 +286,7 @@ class DeviceCollectorClient(DeviceCollector):
                 else:
                     label.setText(self.devices[i][3])
                 label.devid = i
-                label.installEventFilter(mousepressEvent(self.gui))
+                label.installEventFilter(deviceLabelEvent(self.gui))
                 label.setReadOnly(True)
                 label.setStyleSheet('background: transparent;')
                 label.setFrame(False)
@@ -391,6 +408,8 @@ class MainWindow(QMainWindow):
         
         self.config_file = config_file
         self.config = config
+        
+        self.debugProto = None
         
         self.platform = platform
         self.tempdir = tempdir
@@ -580,6 +599,10 @@ class MainWindow(QMainWindow):
                 subprocess.call(['msiexec','/i',dl])
         
     def quitApp(self):
+        if self.debugProto:
+            self.debugProto.transport.loseConnection()
+        shutil.rmtree(self.tempdir)
+        self.save_config()
         reactor.stop()
         QApplication.quit()
         
@@ -674,8 +697,4 @@ if __name__ == '__main__':
     config = load_config(config_file)
     
     mainWin = MainWindow(config_file, config, platform, tempdir)
-    ret = reactor.run()
-    shutil.rmtree(mainWin.tempdir)
-    
-    save_config(config_file, config)
-    sys.exit(ret)
+    sys.exit(reactor.run())
