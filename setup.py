@@ -9,6 +9,11 @@ py2exe_options = dict(
     dll_excludes = ['MSVCP90.dll']
 )
 
+DATA_FILES = [
+              'icons/devices/Icon_Device_Pre1_128.png',
+              'icons/devices/Icon_Device_Pre2_128.png',
+              'icons/devices/Icon_Device_Pixi1_128.png']
+
 setup(
     windows = [
         {
@@ -16,6 +21,7 @@ setup(
             'icon_resources': [(1, 'novacomInstaller.ico')]
         }
     ],
+    data_files = DATA_FILES,
     options = {'py2exe': py2exe_options},
     zipfile = None,
     description = 'Cross-platform novacom tool',
