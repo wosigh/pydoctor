@@ -577,6 +577,14 @@ class MainWindow(QMainWindow):
         reactor.connectTCP('localhost', 6970, DebugFactory(self))
         
         self.show()
+        
+    def getActivePort(self):
+        port = None
+        for dev in self.devices:
+            if self.activeDevice == dev[1]:
+                port = dev[0]
+                break
+        return port
 
     def save_config(self):
         save_config(self.config_file, self.config)
@@ -619,18 +627,17 @@ class MainWindow(QMainWindow):
             self.statusBar.addWidget(self.statusMsg)
         
     def getFile(self):
-        selected = self.deviceList.selectedIndexes()
-        if selected:
+        port = self.getActivePort()
+        if port:
             filename, ok = QInputDialog.getText(self, 'Get file', 'Path to file:')
             if ok:
-                port = self.deviceListModel.arraydata[selected[0].row()][0]
                 c = ClientCreator(reactor, NovacomGet, self)
                 d = c.connectTCP('localhost', port)
                 d.addCallback(cmd_getFile, str(filename))
                 
     def sendFile(self):
-        selected = self.deviceList.selectedIndexes()
-        if selected:
+        port = self.getActivePort()
+        if port:
             infile = QFileDialog.getOpenFileName(self, caption='Send file')
             if infile[0]:
                 outfile, ok = QInputDialog.getText(self, 'Send file', 'Path to file:')
@@ -638,43 +645,38 @@ class MainWindow(QMainWindow):
                     f = open(str(infile[0]),'r')
                     data = f.read()
                     f.close()
-                    port = self.deviceListModel.arraydata[selected[0].row()][0]
                     c = ClientCreator(reactor, NovacomSend, self)
                     d = c.connectTCP('localhost', port)
                     d.addCallback(cmd_sendFile, data, str(outfile))        
 
     def memBoot(self):
-        selected = self.deviceList.selectedIndexes()
-        if selected:
+        port = self.getActivePort()
+        if port:
             infile = QFileDialog.getOpenFileName(self, caption='Mem boot kernel')
             if infile[0]:
                 f = open(str(infile[0]),'r')
                 data = f.read()
                 f.close()
-                port = self.deviceListModel.arraydata[selected[0].row()][0]
                 c = ClientCreator(reactor, NovacomSend, self)
                 d = c.connectTCP('localhost', port)
                 d.addCallback(cmd_memBoot, data)
         
     def runCommand(self):
-        selected = self.deviceList.selectedIndexes()
-        if selected:
-            port = self.deviceListModel.arraydata[selected[0].row()][0]
+        port = self.getActivePort()
+        if port:
             dialog = RunDlg(port, self)
             dialog.show()
         
     def installIPKG(self):
-        selected = self.deviceList.selectedIndexes()
-        if selected:
-            port = self.deviceListModel.arraydata[selected[0].row()][0]
+        port = self.getActivePort()
+        if port:
             dialog = InstallDlg(port, self)
             dialog.show()
     
     def installPreware(self):
-        print 'Install preware'
-        selected = self.deviceList.selectedIndexes()
-        if selected:
-            port = self.deviceListModel.arraydata[selected[0].row()][0]
+        port = self.getActivePort()
+        if port:
+            print 'Install preware'
             c = ClientCreator(reactor, NovacomInstallIPKG, self, port)
             d = c.connectTCP('localhost', port)
             d.addCallback(cmd_installIPKG_URL, PREWARE)
