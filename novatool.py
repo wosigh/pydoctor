@@ -509,6 +509,7 @@ class MainWindow(QMainWindow):
         self.driver.setIconSize(QSize(48,48))
         self.driver.setStyleSheet("padding-bottom: 8")
         self.basicOptions.addWidget(self.driver)
+        QObject.connect(self.driver, SIGNAL('clicked()'), self.installDriver)
         
         self.preware = QToolButton()
         self.preware.setFixedWidth(96)
