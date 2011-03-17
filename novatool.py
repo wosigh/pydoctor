@@ -37,8 +37,7 @@ REMOTE_TEMP = '/media/internal/.developer'
 def download_novacom_installer(platform, url, path):
     dl = None
     if platform == 'Windows':
-        info = systeminfo()
-        if info['System Type'].split('-')[0] == 'x64':
+        if is_win64():
             dl = http_unzip(url, [NOVA_WIN64], path, strip=True)
         else:
             dl = http_unzip(url, [NOVA_WIN32], path, strip=True)
